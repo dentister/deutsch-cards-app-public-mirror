@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scale-down
+  namespace: default
+spec:
+  # 22:00 Europe/Berlin (handles DST automatically)
+  schedule: "0 22 * * *"
+  timeZone: "Europe/Berlin"
+  concurrencyPolicy: Forbid       # Skip if previous job is still running
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: scaler
+          restartPolicy: OnFailure
+          containers:
+            - name: kubectl
+              image: bitnami/kubectl:latest
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "128Mi"
+                  ephemeral-storage: "100Mi"
+                limits:
+                  cpu: "200m"
+                  memory: "256Mi"
+                  ephemeral-storage: "200Mi"
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -e
+                  echo "=== [scale-down] Starting at $(date) ==="
+
+                  # 1. Stop the app and redis first (postgres must stay up while they shut down)
+                  echo "→ Scaling deutsch-cards-app to 0..."
+                  kubectl scale deployment deutsch-cards-app --replicas=0
+
+                  echo "→ Scaling redis to 0..."
+                  kubectl scale deployment redis --replicas=0
+
+                  # 2. Wait for app pods to terminate before stopping postgres
+                  echo "→ Waiting for deutsch-cards-app pods to terminate..."
+                  kubectl rollout status deployment/deutsch-cards-app --timeout=120s || true
+
+                  # 3. Now stop postgres (PVC data is preserved)
+                  echo "→ Scaling postgres to 0..."
+                  kubectl scale statefulset postgres --replicas=0
+
+                  echo "=== [scale-down] Done at $(date) ==="

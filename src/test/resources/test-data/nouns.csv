@@ -1,0 +1,31 @@
+wordType;ru;de;plural;gender
+NOUN;Госпожа;Frau;Frauen;F
+NOUN;Господин;Herr;Herren;M
+NOUN;Имячко;Vorname;Vornamen;M
+NOUN;Фамилия;Nachname;Nachnamen;M
+NOUN;Страна;Land;Länder;N
+NOUN;Семья;Familie;Familien;F
+NOUN;Ребенок;Kind;Kinder;N
+NOUN;Муж;Mann;Männer;M
+NOUN;Жена;Frau;Frauen;F
+NOUN;Сын;Sohn;Söhne;M
+NOUN;Дочь;Tocher;Töchter;F
+NOUN;Родитель;Elter;Eltern;N
+NOUN;Отец;Vater;Väter;M
+NOUN;Мать;Mutter;Mütter;F
+NOUN;Сестра;Schwester;Schwestern;F
+NOUN;Брат;Bruder;Brüder;M
+NOUN;Улица;Straße;Straßen;F
+NOUN;Номер дома;Hausnummer;Hausnummern;F
+NOUN;Город;Stadt;Städte;F
+NOUN;Почтовый индекс;Postleitzahl;Postleitzahlen;F
+NOUN;Номер телефона;Telefonnummer;Telefonnummern;F
+NOUN;Адрес;Adresse;Adressen;F
+NOUN;Место;Ort;Orte;M
+NOUN;Стул;Stuhl;Stühle;M
+NOUN;Карандаш;Stift;Stifte;M
+NOUN;Книга;Buch;Bücher;N
+NOUN;Компьютер;Computer;Computer;M
+NOUN;Тест1;Test;Test;F
+NOUN;Тест1;Test;Test;F
+NOUN;Тест2;Test2;Test2;N

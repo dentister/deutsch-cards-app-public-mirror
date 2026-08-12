@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Choose words</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="styles.css?v=2">
+</head>
+<body>
+  <header>
+    <input id="search" type="text" placeholder="Search German or Russian…" autocomplete="off">
+    <div id="status" class="status">Loading…</div>
+  </header>
+  <main id="list" class="list"></main>
+  <div id="empty" class="empty" hidden></div>
+  <button id="saveBtn" class="save-btn" hidden>Save</button>
+  <script src="app.js?v=2"></script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deutsch-cards-app
+  labels:
+    app: deutsch-cards-app
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  progressDeadlineSeconds: 400
+
+  selector:
+    matchLabels:
+      app: deutsch-cards-app
+  template:
+    metadata:
+      labels:
+        app: deutsch-cards-app
+    spec:
+      imagePullSecrets:
+        - name: github-secret   # Created via kubectl create secret docker-registry
+
+      containers:
+        - name: deutsch-cards-app
+          image: ghcr.io/dentister/deutsch-cards-app:latest
+          ports:
+            - containerPort: 8080
+
+          # ── Resource requests (required by GKE Autopilot) ────────────────
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+              ephemeral-storage: "1Gi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+              ephemeral-storage: "2Gi"
+
+          # ── Environment variables ─────────────────────────────────────────
+          env:
+            # Spring active profile — production (no dev tools, no hot reload)
+            - name: SPRING_PROFILES_ACTIVE
+              value: "production"
+
+            # PostgreSQL datasource
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://postgres:5432/words-db"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "postgres"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret      # Already exists in cluster
+                  key: postgres-password
+
+            # Redis (for session/game state caching)
+            - name: SPRING_DATA_REDIS_HOST
+              value: "redis"
+            - name: SPRING_DATA_REDIS_PORT
+              value: "6379"
+
+            # Telegram bot token
+            - name: TELEGRAM_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: deutsch-cards-secret  # Created in setup step below
+                  key: telegram-bot-token
+
+          # ── Health probes ─────────────────────────────────────────────────
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            failureThreshold: 5

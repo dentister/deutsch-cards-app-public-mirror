@@ -1,0 +1,1 @@
+ALTER TABLE verb ADD COLUMN partizip_2 varchar(100);

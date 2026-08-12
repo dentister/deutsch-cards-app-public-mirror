@@ -1,0 +1,1 @@
+INSERT INTO users VALUES (1, 'sysadm', '$2a$10$2dOaDw8KFRSsi03szCIaKex9ksUxAq.uKNS75tpe8Q4j4DhZ/xGoa', true);

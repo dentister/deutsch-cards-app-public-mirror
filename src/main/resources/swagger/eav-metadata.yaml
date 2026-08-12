@@ -1,0 +1,411 @@
+openapi: 3.0.0
+info:
+  title: Metadata API
+  description: Manages creation, change and deletion of object types and their attributes
+  version: 1.0.0
+tags:
+- name: EntityType
+- name: Attribute
+- name: AttributeTypeDefinition
+paths:
+  /metadata/v1/entityType:
+    post:
+      tags:
+        - EntityType
+      summary: Creates new entity type
+      operationId: createEntityType
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostEntityTypeDto'
+      responses:
+        201:
+          description: Entity Type is created
+        400:
+          description: Error has occured
+  /metadata/v1/entityType/{id}:
+    delete:
+      tags:
+        - EntityType
+      summary: Deletes Entity Type
+      operationId: deleteEntityType
+      parameters:
+        - name: id
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: Entity Type is updated
+        400:
+          description: Bad request
+        404:
+          description: Entity Type not found
+    patch:
+      tags:
+        - EntityType
+      summary: Updates entity type
+      operationId: updateEntityType
+      parameters:
+        - name: id
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchEntityTypeDto'
+      responses:
+        201:
+          description: Entity Type is updated
+        400:
+          description: Error has occured
+    get:
+      tags:
+        - EntityType
+      summary: Find Entity Type by ID
+      operationId: findEntityTypeById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: Found Entity Type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersistedEntityTypeDto'
+        400:
+          description: Error has occured
+  /metadata/v1/attribute:
+    post:
+      tags:
+        - Attribute
+      summary: Creates new attribute
+      operationId: createAttribute
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostAttributeDto'
+      responses:
+        201:
+          description: Attribute is created
+        400:
+          description: Error has occured
+  /metadata/v1/attribute/{id}:
+    delete:
+      tags:
+        - Attribute
+      summary: Deletes Attribute
+      operationId: deleteAttribute
+      parameters:
+        - name: id
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: Attribute has been deleted
+        400:
+          description: Error has occured
+        404:
+          description: Attribute not found
+    patch:
+      tags:
+        - Attribute
+      summary: Updates attribute
+      operationId: updateAttribute
+      parameters:
+        - name: id
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchAttributeDto'
+      responses:
+        201:
+          description: Attribute has been created
+        400:
+          description: Error has occured
+    get:
+      tags:
+        - Attribute
+      summary: Find Attribute by ID
+      operationId: findAttributeById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: Found Attribute
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersistedAttributeDto'
+        404:
+          description: Error has occured
+  /metadata/v1/attributeTypeDefinition:
+    post:
+      tags:
+        - AttributeTypeDefinition
+      summary: Creates AttributeTypeDefinition
+      operationId: createAttributeTypeDefinition
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostAttrTypeDefDto'
+      responses:
+        201:
+          description: AttributeTypeDefinition has been created
+        400:
+          description: Error has occured
+  /metadata/v1/attributeTypeDefinition/{id}:
+    delete:
+      tags:
+        - AttributeTypeDefinition
+      summary: Deletes AttributeTypeDefinition
+      operationId: deleteAttributeTypeDefinition
+      parameters:
+        - name: id
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: AttributeTypeDefinition has been deleted
+        400:
+          description: Error has occured
+        404:
+          description: AttributeTypeDefinition not found
+    patch:
+      tags:
+        - AttributeTypeDefinition
+      summary: Updates AttributeTypeDefinition
+      operationId: updateAttributeTypeDefinition
+      parameters:
+        - name: id
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchAttrTypeDefDto'
+      responses:
+        201:
+          description: AttributeTypeDefinition has been created
+        400:
+          description: Error has occured
+        404:
+          description: AttributeTypeDefinition not found
+    get:
+      tags:
+        - AttributeTypeDefinition
+      summary: Find AttributeTypeDefinition by ID
+      operationId: findAttributeTypeDefinitionById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: Found AttributeTypeDefinition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersistedAttrTypeDefDto'
+        404:
+          description: Error has occured
+components:
+  schemas:
+    EntityTypeDto:
+      type: object
+      properties:
+        name:
+          type: string
+        parentId:
+          type: integer
+          format: int64
+        description:
+          type: string
+    PersistedEntityTypeDto:
+      type: object
+      allOf:
+      - properties:
+          id:
+            type: integer
+            format: int64
+      - $ref: '#/components/schemas/EntityTypeDto'
+    AttributeDto:
+      type: object
+      properties:
+        name:
+          type: string
+        attrType:
+          type: string
+          enum:
+            - TEXT
+            - NUMBER
+            - DECIMAL
+            - REF
+            - DATE
+            - LIST
+        attrTypeDef:
+          type: integer
+          format: int64
+        orderNumber:
+          type: integer
+        description:
+          type: string
+    PersistedAttributeDto:
+      type: object
+      allOf:
+        - properties:
+            id:
+              type: integer
+              format: int64
+        - $ref: '#/components/schemas/AttributeDto'
+    AttrTypeDefDto:
+      type: object
+      properties:
+        name:
+          type: string
+        refEntityTypeId:
+          type: integer
+          format: int64
+        listValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ListValueDto' 
+    PersistedAttrTypeDefDto:
+      type: object
+      properties:
+        name:
+          type: string
+        refEntityTypeId:
+          type: integer
+          format: int64
+        listValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/PersistedListValueDto' 
+    ListValueDto:
+      type: object
+      properties:
+        value:
+          type: string
+    PersistedListValueDto:
+      type: object
+      allOf:
+        - properties:
+            id:
+              type: integer
+              format: int64
+        - $ref: '#/components/schemas/ListValueDto'
+    PostEntityTypeDto:
+      type: object
+      properties:
+        payload:
+          allOf:
+            - $ref: '#/components/schemas/EntityTypeDto'
+    PatchEntityTypeDto:
+      type: object
+      properties:
+        payload:
+          allOf:
+            - $ref: '#/components/schemas/EntityTypeDto'
+    PostAttributeDto:
+      type: object
+      properties:
+        payload:
+          allOf:
+            - $ref: '#/components/schemas/AttributeDto'
+            - properties:
+                bind:
+                  type: array
+                  items:
+                    type: integer
+                    format: int64
+                unbind:
+                  type: array
+                  items:
+                    type: integer
+                    format: int64
+    PatchAttributeDto:
+      type: object
+      properties:
+        payload:
+          allOf:
+            - $ref: '#/components/schemas/AttributeDto'
+            - properties:
+                bind:
+                  type: array
+                  items:
+                    type: integer
+                    format: int64
+                unbind:
+                  type: array
+                  items:
+                    type: integer
+                    format: int64
+    PostAttrTypeDefDto:
+      type: object
+      properties:
+        payload:
+          allOf:
+            - $ref: '#/components/schemas/AttrTypeDefDto'
+    PatchAttrTypeDefDto:
+      type: object
+      properties:
+        payload:
+          allOf:
+            - $ref: '#/components/schemas/AttrTypeDefDto'

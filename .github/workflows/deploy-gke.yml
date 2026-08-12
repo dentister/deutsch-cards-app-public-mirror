@@ -1,0 +1,140 @@
+name: Build, Push & Deploy to GKE
+
+on:
+  workflow_dispatch:
+
+env:
+  IMAGE: ghcr.io/dentister/deutsch-cards-app
+
+jobs:
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 1 — Build production JAR + Docker image, push to GHCR
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-and-push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write   # Required to push to GHCR
+
+    outputs:
+      image_tag: ${{ steps.version.outputs.tag }}
+
+    steps:
+      # ── 1. Checkout ─────────────────────────────────────────────────────────
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── 2. Java 17 ──────────────────────────────────────────────────────────
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      # ── 3. Node 20 (Vaadin frontend build) ──────────────────────────────────
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # ── 4. Compute version (major.minor from pom.xml + run number as patch) ──
+      - name: Compute version
+        id: version
+        run: |
+          POM_VER=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout --no-transfer-progress)
+          PREFIX=$(echo "$POM_VER" | sed 's/\.[0-9]*$//')   # strips last .N → "2.1"
+          TAG="${PREFIX}.${{ github.run_number }}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Image version: ${TAG}"
+
+      # ── 5. Build production JAR ──────────────────────────────────────────────
+      #    -Pbase      → OpenAPI generation + sets finalName
+      #    -Pproduction → Vaadin frontend + Spring Boot repackage
+      - name: Build production JAR
+        run: mvn package -Pbase,production --no-transfer-progress
+
+      # ── 6. Docker Buildx ─────────────────────────────────────────────────────
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ── 7. Login to GitHub Container Registry ────────────────────────────────
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 8. Compute image tags ────────────────────────────────────────────────
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=${{ steps.version.outputs.tag }}
+            type=raw,value=latest
+
+      # ── 9. Build & push image ────────────────────────────────────────────────
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Use inline cache to speed up subsequent builds
+          cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache,mode=max
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # JOB 2 — Deploy to GKE
+  # ─────────────────────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to GKE
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    permissions:
+      contents: read
+      id-token: write   # Required for Workload Identity Federation
+
+    steps:
+      # ── 1. Checkout (needed for k8s manifests) ───────────────────────────────
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── 2. Authenticate to Google Cloud via Workload Identity Federation ──────
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      # ── 3. Install gcloud + kubectl ──────────────────────────────────────────
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          install_components: 'kubectl,gke-gcloud-auth-plugin'
+
+      # ── 4. Connect to GKE cluster ────────────────────────────────────────────
+      - name: Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME }} \
+            --region ${{ secrets.GKE_CLUSTER_REGION }} \
+            --project ${{ secrets.GCP_PROJECT_ID }}
+
+      # ── 5. Point deployment to exact image tag ──────────────────────────────
+      - name: Update image tag in deployment
+        run: |
+          IMAGE_TAG="${{ needs.build-and-push.outputs.image_tag }}"
+          echo "Deploying image tag: ${IMAGE_TAG}"
+          kubectl set image deployment/deutsch-cards-app \
+            deutsch-cards-app=${{ env.IMAGE }}:${IMAGE_TAG}
+
+      # ── 6. Wait for rollout to complete ─────────────────────────────────────
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/deutsch-cards-app --timeout=600s

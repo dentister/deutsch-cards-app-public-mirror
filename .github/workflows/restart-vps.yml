@@ -1,0 +1,78 @@
+name: Restart App on VPS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  restart:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Execute restart script on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ADMIN_BOT_TOKEN: ${{ secrets.TELEGRAM_ADMIN_BOT_TOKEN }}
+          VPS_DB_PASS: ${{ secrets.VPS_DB_PASS }}
+          MINIAPP_URL: ${{ secrets.MINIAPP_URL }}
+          GOOGLE_AI_API_KEY: ${{secrets.GOOGLE_AI_API_KEY}}
+          PG_DATABASE_NAME: ${{ secrets.PG_DATABASE_NAME }}
+          PG_PORT: ${{ secrets.PG_PORT }}
+          PG_USERNAME: ${{ secrets.PG_USERNAME }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: TELEGRAM_BOT_TOKEN,TELEGRAM_ADMIN_BOT_TOKEN,VPS_DB_PASS,MINIAPP_URL,GOOGLE_AI_API_KEY,PG_DATABASE_NAME,PG_PORT,PG_USERNAME
+          script: |
+            cd /usr/apps/deutsch-cards-app
+
+            # Настройки подключения к базе
+            DB_HOST="localhost"
+            DB_PORT="$PG_PORT"
+            DB_NAME="$PG_DATABASE_NAME"
+            DB_USER="$PG_USERNAME"
+
+            # Путь к jar-файлу
+            JAR_FILE="deutsche-cards-app.jar"
+
+            # Ищем PID запущенного приложения
+            PID=$(ps -ef | grep "$JAR_FILE" | grep -v grep | awk '{print $2}')
+
+            if [ -n "$PID" ]; then
+              echo "Останавливаю запущенное приложение (PID=$PID)..."
+              kill "$PID"
+              sleep 5
+              # Проверяем, остановилось ли приложение, если нет - убиваем принудительно
+              if ps -p $PID > /dev/null; then
+                echo "Приложение не остановилось, использую kill -9..."
+                kill -9 $PID
+              fi
+            else
+              echo "Приложение не запущено."
+            fi
+
+            echo "Запускаю приложение..."
+
+            # Запуск с параметрами базы данных
+            nohup java -jar "$JAR_FILE" \
+              --spring.datasource.url=jdbc:postgresql://$DB_HOST:$DB_PORT/$DB_NAME \
+              --spring.datasource.username=$DB_USER \
+              --spring.datasource.password=$VPS_DB_PASS \
+              --spring.profiles.active=prod,no-vaadin \
+              --server.port=8180 \
+              --spring.ai.google.genai.api-key=$GOOGLE_AI_API_KEY \
+              --telegram.bot.token=$TELEGRAM_BOT_TOKEN \
+              --admin.bot.enabled=true \
+              --admin.bot.token=$TELEGRAM_ADMIN_BOT_TOKEN \
+              --miniapp.url=$MINIAPP_URL \
+              > app.log 2>&1 &
+
+            echo "Приложение запущено. Проверяю статус..."
+            sleep 3
+            if ps -ef | grep "$JAR_FILE" | grep -v grep > /dev/null; then
+              echo "Приложение успешно стартовало."
+            else
+              echo "Ошибка при запуске приложения. Проверьте app.log"
+              exit 1
+            fi

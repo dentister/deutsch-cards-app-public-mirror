@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scale-up
+  namespace: default
+spec:
+  # 14:00 Europe/Berlin (handles DST automatically)
+  schedule: "0 14 * * *"
+  timeZone: "Europe/Berlin"
+  concurrencyPolicy: Forbid       # Skip if previous job is still running
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: scaler
+          restartPolicy: OnFailure
+          containers:
+            - name: kubectl
+              image: bitnami/kubectl:latest
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "128Mi"
+                  ephemeral-storage: "100Mi"
+                limits:
+                  cpu: "200m"
+                  memory: "256Mi"
+                  ephemeral-storage: "200Mi"
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -e
+                  echo "=== [scale-up] Starting at $(date) ==="
+
+                  # 1. Start postgres first so it's ready before the app connects
+                  echo "→ Scaling postgres to 1..."
+                  kubectl scale statefulset postgres --replicas=1
+
+                  # 2. Wait until postgres pod is Running
+                  echo "→ Waiting for postgres to be ready..."
+                  kubectl rollout status statefulset/postgres --timeout=120s
+
+                  # 3. Start app and redis
+                  echo "→ Scaling deutsch-cards-app to 1..."
+                  kubectl scale deployment deutsch-cards-app --replicas=1
+
+                  echo "→ Scaling redis to 1..."
+                  kubectl scale deployment redis --replicas=1
+
+                  echo "=== [scale-up] Done at $(date) ==="

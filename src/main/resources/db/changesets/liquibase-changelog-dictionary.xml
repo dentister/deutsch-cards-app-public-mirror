@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <!-- Base dictionary dump (nouns, adjectives, phrases, verbs) -->
+    <changeSet id="dictionary-001-dump" author="dentister" failOnError="true" runOnChange="true">
+        <sqlFile path="../sql/game/dictionary/dump-words-db-202602211426.sql"
+                 relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+
+    <!-- Missing A1/A2 verbs (sein, haben, gehen, kommen, modal verbs, etc.) -->
+    <changeSet id="dictionary-002-missing-verbs-a1-a2" author="dentister" failOnError="true" runOnChange="true">
+        <sqlFile path="../sql/game/dictionary/missing-verbs-a1-a2.sql"
+                 relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+
+    <!-- Health vocabulary — tag Gesundheit (nouns, verbs, adjectives) -->
+    <changeSet id="dictionary-003-health-gesundheit" author="dentister" failOnError="true" runOnChange="true">
+        <sqlFile path="../sql/game/dictionary/health-words-gesundheit.sql"
+                 relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+
+    <!-- IT vocabulary — tag IT (nouns, verbs, adjectives) -->
+    <changeSet id="dictionary-004-it-words" author="dentister" failOnError="true" runOnChange="true">
+        <sqlFile path="../sql/game/dictionary/it-words-update-20260428.sql"
+                 relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+
+    <!-- IT tag: add to existing words from dump that were missing it (2026-04-30) -->
+    <changeSet id="dictionary-005-it-tag-update" author="dentister" failOnError="true" runOnChange="true">
+        <sqlFile path="../sql/game/dictionary/it-words-tag-update-20260430.sql"
+                 relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+    
+    <!-- Fix: word forms, translations, CEFR levels, verb conjugation -->
+    <changeSet id="dictionary-006-fix-levels-and-forms" author="dentister" failOnError="true" runOnChange="true">
+        <sqlFile path="../sql/game/dictionary/fix-levels-and-forms-20260626.sql"
+                 relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+
+</databaseChangeLog>

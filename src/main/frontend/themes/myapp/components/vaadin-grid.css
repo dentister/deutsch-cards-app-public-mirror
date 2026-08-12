@@ -1,0 +1,44 @@
+tbody ::slotted(vaadin-grid-cell-content) {
+    font-size: 15px
+}
+
+::slotted(vaadin-grid-cell-content) {
+    font-size: 16px
+}
+
+[part~='fold'] {
+    font-weight: bold;
+}
+
+[part~='der-cell'] {
+    background-color: lightskyblue;
+    color: blue;
+    font-weight: bold;
+}
+
+[part~='das-cell'] {
+    background-color: lightgreen;
+    color: green;
+    font-weight: bold;
+}
+
+[part~='die-cell'] {
+    background-color: lightpink;
+    color: mediumvioletred;
+    font-weight: bold;
+}
+
+[part~='der-cell-translation'] {
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+[part~='das-cell-translation'] {
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+[part~='die-cell-translation'] {
+    word-wrap: break-word;
+    white-space: normal;
+}

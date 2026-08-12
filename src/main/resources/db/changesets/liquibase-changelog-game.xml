@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <changeSet id="function-get_word_scores" author="dentister" failOnError="true" runOnChange="true">
+        <sqlFile path="../sql/game/functions/get_word_scores.sql" relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+    <changeSet id="001-game" author="dentister" failOnError="true" >
+        <sqlFile path="../sql/game/001-game.sql" relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+    <changeSet id="002-game" author="dentister" failOnError="true" >
+        <sqlFile path="../sql/game/002-game.sql" relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+    <changeSet id="003-game" author="dentister" failOnError="true" >
+        <sqlFile path="../sql/game/003-game.sql" relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+    <changeSet id="004-game" author="dentister" failOnError="true" >
+        <sqlFile path="../sql/game/004-game.sql" relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+    <changeSet id="005-game" author="dentister" failOnError="true" >
+        <sqlFile path="../sql/game/005-game.sql" relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+    <changeSet id="006-game" author="dentister" failOnError="true" >
+        <sqlFile path="../sql/game/006-game.sql" relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+    <changeSet id="007-game" author="dentister" failOnError="true" >
+        <sqlFile path="../sql/game/007-game.sql" relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+    <changeSet id="008-game" author="dentister" failOnError="true" >
+        <sqlFile path="../sql/game/008-game.sql" relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+    <changeSet id="009-game" author="dentister" failOnError="true" >
+        <sqlFile path="../sql/game/009-game.sql" relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+     <changeSet id="010-game" author="dentister" failOnError="true" >
+        <sqlFile path="../sql/game/010-game.sql" relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+    <changeSet id="011-game" author="dentister" failOnError="true" >
+        <sqlFile path="../sql/game/011-game.sql" relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+</databaseChangeLog>

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: deutsch-cards-app
+  labels:
+    app: deutsch-cards-app
+spec:
+  type: ClusterIP   # Bot uses long polling — no inbound public IP needed
+  selector:
+    app: deutsch-cards-app
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080

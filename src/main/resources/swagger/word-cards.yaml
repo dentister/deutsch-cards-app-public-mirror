@@ -1,0 +1,170 @@
+openapi: 3.0.0
+info:
+  title: Word Cards API 
+  version: 2.0.2
+  description: Provides API to operate with words.
+tags: 
+  - name: WordCrud
+paths:
+  /api/word-cards/v1/words:
+    post:
+      tags:
+        - WordCrud
+      summary: Save word in catalog
+      operationId: createWord
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WordCrudApiV1PostWordRq"
+      responses:
+        201:
+          description: Word is saved
+        400:
+          description: Error has occured
+  /api/word-cards/v1/words/{id}:
+    delete:
+      tags:
+        - WordCrud
+      summary: Delete word from catalog
+      operationId: delete
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: Word has been deleted
+        400:
+          description: Error has occured
+        404:
+          description: Word not found
+  /api/word-cards/v1/words/search:
+    get:
+      tags:
+        - WordCrud
+      summary: Search for words by pattern in catalog
+      operationId: search
+      parameters:
+        - name: value
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: true
+          schema:
+            type: integer
+            default: 15
+            maximum: 100
+            minimum: 1
+      responses:
+        200:
+          description: Found list of books
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WordCrudApiV1GetWordRs'
+        400:
+          description: Error has occured
+components:
+  schemas:
+    WordPropertiesDto:
+      type: object
+      properties:
+        ru:
+          type: string
+        de:
+          type: string
+        wordType:
+          type: string
+        level:
+          type: string
+          enum:
+            - A1
+            - A2
+            - B1
+            - B2
+            - C1
+            - C2
+    NounDto:
+      allOf:
+        - $ref: '#/components/schemas/WordPropertiesDto'
+        - type: object
+          properties: 
+            plural:
+              type: string
+            gender:
+              type: string
+              enum:
+                - F
+                - M
+                - N
+                - PL
+    VerbDto:
+      allOf:
+        - $ref: '#/components/schemas/WordPropertiesDto'
+        - type: object
+          properties: 
+            ich:
+              type: string
+            du:
+              type: string
+            er:
+              type: string
+            wir:
+              type: string
+            ihr:
+              type: string
+            sie:
+              type: string
+            partizip2:
+              type: string
+            rootVerb:
+              type: string
+            prefix:
+              type: string
+            notes:
+              type: string
+    AdjectiveDto:
+      allOf:
+        - $ref: '#/components/schemas/WordPropertiesDto'
+    AdverbDto:
+      allOf:
+        - $ref: '#/components/schemas/WordPropertiesDto'
+    PhraseDto:
+      allOf:
+        - $ref: '#/components/schemas/WordPropertiesDto'
+    WordDto:
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/VerbDto'
+        - $ref: '#/components/schemas/NounDto'
+        - $ref: '#/components/schemas/AdjectiveDto'
+        - $ref: '#/components/schemas/AdverbDto'
+        - $ref: '#/components/schemas/PhraseDto'
+      discriminator:
+        propertyName: wordType
+        mapping:
+          NOUN: '#/components/schemas/NounDto'
+          VERB: '#/components/schemas/VerbDto'
+          ADJECTIVE: '#/components/schemas/AdjectiveDto'
+          ADVERB: '#/components/schemas/AdverbDto'
+          PHRASE: '#/components/schemas/PhraseDto'
+    WordCrudApiV1PostWordRq:
+      type: array
+      items:
+        $ref: '#/components/schemas/WordDto'
+    WordCrudApiV1GetWordRs:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: integer
+            format: int64
+          word:
+            $ref: '#/components/schemas/WordDto'
