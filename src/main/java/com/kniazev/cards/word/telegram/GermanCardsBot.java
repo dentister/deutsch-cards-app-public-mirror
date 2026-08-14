@@ -44,11 +44,8 @@ import static com.kniazev.cards.word.telegram.constants.TextPatterns.*;
 public class GermanCardsBot implements SpringLongPollingBot, LongPollingSingleThreadUpdateConsumer {
 
     private static final String TAG_CALLBACK_PREFIX  = "TAG:";
-
     private static final String TAG_CLEAR_CALLBACK   = "TAG:__ALL__";
-
     private static final String TAG_APPLY_CALLBACK   = "TAG:__APPLY__";
-
     private static final int    TAG_COLUMNS           = 2;
 
     private final GameService gameService;
@@ -100,6 +97,7 @@ public class GermanCardsBot implements SpringLongPollingBot, LongPollingSingleTh
                     WordLevel selectedLevel = WordLevel.valueOf(callbackData);
                     GameConfiguration gameConfiguration = gameService.getGameConfiguration(username);
                     gameConfiguration.setMaxLevel(selectedLevel);
+
                     restartGameAndNotify(username, chatId, gameConfiguration);
                 }
             } else if (msg.isCommand()) {

@@ -75,14 +75,10 @@ public class WordCard {
     private static Color getCardColor(Word w) {
         if (w instanceof Noun n) {
             return switch (n.getGender()) {
-                case F:
-                    yield Color.RED;
-                case M:
-                    yield Color.BLUE;
-                case N:
-                    yield Color.GREEN;
-                case PL:
-                    yield Color.RED;
+                case F: yield Color.RED;
+                case M: yield Color.BLUE;
+                case N: yield Color.GREEN;
+                case PL: yield Color.RED;
             };
         } else {
             return Color.DEFAULT;

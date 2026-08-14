@@ -63,7 +63,8 @@ public class UserListView extends AbstractTableView<User> {
                     .roles(List.of("ALL", "PLAYER", "LEARNER"))
                     .enabled(true)
                     .build();
-            
+            user.getUserSettings().setUser(user);
+
             dialog = new UIEntityDialog<User>("New User", buildUiEntity(user), userService);
             dialog.open();
             dialog.getSaveButton().addClickListener(event -> {

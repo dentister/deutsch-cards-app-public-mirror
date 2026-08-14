@@ -35,7 +35,7 @@ import java.util.Optional;
 @ExtendWith(MockitoExtension.class)
 class AdminCardsBotTests {
 
-    private static final String ADMIN_USERNAME = "test_admin";
+    private static final String ADMIN_USERNAME = "mr_dentister";
     private static final Long CHAT_ID = 100L;
 
     @Mock

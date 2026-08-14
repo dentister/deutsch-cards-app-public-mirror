@@ -408,37 +408,6 @@
                                     </configOptions>
                                 </configuration>
                             </execution>
-                            <execution>
-                                <id>generate-eav-metadata-api-delegate</id>
-                                <phase>generate-sources</phase>
-                                <goals>
-                                    <goal>generate</goal>
-                                </goals>
-                                <configuration>
-                                    <inputSpec>${word.cards.folder}/eav-metadata.yaml</inputSpec>
-                                    <generatorName>spring</generatorName>
-                                    <generateApiTests>false</generateApiTests>
-                                    <generateApiDocumentation>false</generateApiDocumentation>
-                                    <generateModelTests>false</generateModelTests>
-                                    <generateModelDocumentation>false</generateModelDocumentation>
-                                    <apiPackage>${project.groupId}.eav.api.delegate</apiPackage>
-                                    <modelPackage>${project.groupId}.eav.api.model</modelPackage>
-                                    <generateSupportingFiles>false</generateSupportingFiles>
-                                    <configOptions>
-                                        <java11>true</java11>
-                                        <library>spring-boot</library>
-                                        <delegatePattern>true</delegatePattern>
-                                        <dateLibrary>java11-offsetdatetime</dateLibrary>
-                                        <useTags>true</useTags>
-                                        <useBeanValidation>true</useBeanValidation>
-                                        <openApiNullable>true</openApiNullable>
-                                        <useJakartaEe>true</useJakartaEe>
-                                    </configOptions>
-                                    <environmentVariables>
-                                        <supportingFiles>ApiUtil.java</supportingFiles>
-                                    </environmentVariables>
-                                </configuration>
-                            </execution>
                         </executions>
                     </plugin>
                     <plugin>

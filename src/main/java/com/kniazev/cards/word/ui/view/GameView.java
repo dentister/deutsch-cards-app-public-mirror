@@ -39,6 +39,9 @@ import java.util.List;
 
 import jakarta.annotation.security.RolesAllowed;
 
+/**
+ * Legacy and will not be supported in the future
+ */
 @RolesAllowed({Roles.ROLE_ADMIN, Roles.ROLE_PLAYER})
 @PageTitle("Game")
 @Route(value = UIRoute.GAME_PAGE, layout = MainLayout.class)

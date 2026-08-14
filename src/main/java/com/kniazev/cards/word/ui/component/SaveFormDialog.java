@@ -175,7 +175,7 @@ public class SaveFormDialog extends Dialog {
         WordBuilder<?, ?> builder = switch (wordTypeRadioButtonGroup.getValue()) {
             case NOUN: yield Noun.builder().wordType(WordType.NOUN);
             case VERB: yield Verb.builder().wordType(WordType.VERB);
-            default: yield null;
+            default: throw new IllegalArgumentException("Value of wordTypeRadioButtonGroup could not be null.");
         };
 
         StringBuffer sb = new StringBuffer("");
@@ -184,15 +184,12 @@ public class SaveFormDialog extends Dialog {
         }
         sb.append(deTextField().getValue());
 
-         Word w = builder
-                 .wordType(wordTypeRadioButtonGroup().getValue())
-                 .de(sb.toString())
-                 .build();
+        Word w = builder.wordType(wordTypeRadioButtonGroup().getValue()).de(sb.toString()).build();
 
-         word.map(Word::getId).ifPresent(w::setId);
-         w.setRuSetAsString(ruTextField().getValue());
+        word.map(Word::getId).ifPresent(w::setId);
+        w.setRuSetAsString(ruTextField().getValue());
 
-         return w;
+        return w;
     }
 
     private ComponentEventListener<ClickEvent<Button>> onSaveButtonClickListener(Consumer<Word> okButtonAction) {
