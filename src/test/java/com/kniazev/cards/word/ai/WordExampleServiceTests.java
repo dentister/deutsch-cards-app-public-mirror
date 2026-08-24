@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.kniazev.cards.word.db.model.word.Word;
 import com.kniazev.cards.word.db.model.word.Word.WordLevel;
-import com.kniazev.cards.word.db.services.WordService;
+import com.kniazev.cards.word.db.service.WordService;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,7 +36,8 @@ class WordExampleServiceTests {
     @Test
     void parsesValidJsonIntoRecord() {
         String json = """
-                {"sentence":"Der Hund läuft schnell.","translationRu":"Собака бежит быстро."}
+                {"sentence":"Der Hund läuft schnell.","translationRu":"Собака бежит быстро.",
+                 "translationEn":"The dog runs fast.","wordEn":"to run"}
                 """;
         when(chatModel.call(any(Prompt.class)))
                 .thenReturn(new ChatResponse(List.of(new Generation(new AssistantMessage(json)))));
@@ -46,13 +47,15 @@ class WordExampleServiceTests {
 
         Optional<WordUsageExample> result = service.generateExample(word);
 
-        assertThat(result).contains(new WordUsageExample("Der Hund läuft schnell.", "Собака бежит быстро."));
+        assertThat(result).contains(new WordUsageExample("Der Hund läuft schnell.", "Собака бежит быстро.",
+                "The dog runs fast.", "to run"));
     }
 
     @Test
     void stripsMarkdownSignificantCharactersFromModelOutput() {
         String json = """
-                {"sentence":"Der *Hund* läuft `schnell`.","translationRu":"Собака ~бежит~ быстро."}
+                {"sentence":"Der *Hund* läuft `schnell`.","translationRu":"Собака ~бежит~ быстро.",
+                 "translationEn":"The *dog* runs `fast`.","wordEn":"~to run~"}
                 """;
         when(chatModel.call(any(Prompt.class)))
                 .thenReturn(new ChatResponse(List.of(new Generation(new AssistantMessage(json)))));
@@ -62,7 +65,8 @@ class WordExampleServiceTests {
 
         Optional<WordUsageExample> result = service.generateExample(word);
 
-        assertThat(result).contains(new WordUsageExample("Der Hund läuft schnell.", "Собака бежит быстро."));
+        assertThat(result).contains(new WordUsageExample("Der Hund läuft schnell.", "Собака бежит быстро.",
+                "The dog runs fast.", "to run"));
     }
 
     @Test
@@ -76,12 +80,13 @@ class WordExampleServiceTests {
     }
 
     @Test
-    void doesNothingWhenSampleAlreadyCached() {
+    void doesNothingWhenAllFieldsAlreadyCached() {
         WordExampleService service = new WordExampleService(ChatClient.builder(chatModel), wordService);
         Word word = Word.builder().de("laufen").ru("бежать").level(WordLevel.A1)
-                .sample("Der Hund läuft schnell.").sampleRu("Собака бежит быстро.").build();
+                .sample("Der Hund läuft schnell.").sampleRu("Собака бежит быстро.")
+                .sampleEn("The dog runs fast.").en("to run").build();
 
-        service.cacheExampleIfMissing(word);
+        service.doEnsureExampleAndEnglishExist(word);
 
         verify(chatModel, never()).call(any(Prompt.class));
         verify(wordService, never()).save(any(Word.class));
@@ -90,7 +95,8 @@ class WordExampleServiceTests {
     @Test
     void generatesAndPersistsWhenSampleMissing() {
         String json = """
-                {"sentence":"Der Hund läuft schnell.","translationRu":"Собака бежит быстро."}
+                {"sentence":"Der Hund läuft schnell.","translationRu":"Собака бежит быстро.",
+                 "translationEn":"The dog runs fast.","wordEn":"to run"}
                 """;
         when(chatModel.call(any(Prompt.class)))
                 .thenReturn(new ChatResponse(List.of(new Generation(new AssistantMessage(json)))));
@@ -98,10 +104,32 @@ class WordExampleServiceTests {
         WordExampleService service = new WordExampleService(ChatClient.builder(chatModel), wordService);
         Word word = Word.builder().de("laufen").ru("бежать").level(WordLevel.A1).build();
 
-        service.cacheExampleIfMissing(word);
+        service.doEnsureExampleAndEnglishExist(word);
 
         assertThat(word.getSample()).isEqualTo("Der Hund läuft schnell.");
         assertThat(word.getSampleRu()).isEqualTo("Собака бежит быстро.");
+        assertThat(word.getSampleEn()).isEqualTo("The dog runs fast.");
+        assertThat(word.getEn()).isEqualTo("to run");
+        verify(wordService).save(word);
+    }
+
+    @Test
+    void generatesEnglishFieldsWhenOnlyTheyAreMissing() {
+        String json = """
+                {"sentence":"Der Hund läuft schnell.","translationRu":"Собака бежит быстро.",
+                 "translationEn":"The dog runs fast.","wordEn":"to run"}
+                """;
+        when(chatModel.call(any(Prompt.class)))
+                .thenReturn(new ChatResponse(List.of(new Generation(new AssistantMessage(json)))));
+
+        WordExampleService service = new WordExampleService(ChatClient.builder(chatModel), wordService);
+        Word word = Word.builder().de("laufen").ru("бежать").level(WordLevel.A1)
+                .sample("Der Hund läuft schnell.").sampleRu("Собака бежит быстро.").build();
+
+        service.doEnsureExampleAndEnglishExist(word);
+
+        assertThat(word.getSampleEn()).isEqualTo("The dog runs fast.");
+        assertThat(word.getEn()).isEqualTo("to run");
         verify(wordService).save(word);
     }
 
@@ -112,7 +140,7 @@ class WordExampleServiceTests {
         WordExampleService service = new WordExampleService(ChatClient.builder(chatModel), wordService);
         Word word = Word.builder().de("laufen").ru("бежать").level(WordLevel.A1).build();
 
-        service.cacheExampleIfMissing(word);
+        service.doEnsureExampleAndEnglishExist(word);
 
         assertThat(word.getSample()).isNull();
         verify(wordService, never()).save(any(Word.class));

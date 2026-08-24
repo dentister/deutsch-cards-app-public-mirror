@@ -120,6 +120,18 @@ class WordDraftMapperTests {
     }
 
     @Test
+    void toEntityCopiesEnglishFieldsOntoBuiltWord() {
+        WordDraft draft = new WordDraft(WordType.NOUN, "Tisch", "стол", "table", WordLevel.A1,
+                GenderType.M, "Tische", null, null, null, null, null, null, null, null, null, null,
+                "Der Tisch ist alt.", "Стол старый.", "The table is old.", null);
+
+        Word word = WordDraftMapper.toEntity(draft);
+
+        assertThat(word.getEn()).isEqualTo("table");
+        assertThat(word.getSampleEn()).isEqualTo("The table is old.");
+    }
+
+    @Test
     void toEntityDefaultsMissingLevelToC2() {
         WordDraft draft = draft(WordType.PHRASE, "auf jeden Fall", "в любом случае", null, null, null,
                 null, null, null, null, null, null, null, null, null, null);
@@ -135,14 +147,14 @@ class WordDraftMapperTests {
                                     GenderType gender, String plural,
                                     String ich, String du, String er, String wir, String ihr, String sie,
                                     String partizip2, String prefix, String sample, String sampleRu) {
-        return new WordDraft(wordType, de, ru, level, gender, plural,
-                ich, du, er, wir, ihr, sie, partizip2, prefix, null, null, sample, sampleRu, null);
+        return new WordDraft(wordType, de, ru, null, level, gender, plural,
+                ich, du, er, wir, ihr, sie, partizip2, prefix, null, null, sample, sampleRu, null, null);
     }
 
     private static WordDraft withNotes(WordDraft draft, String notes) {
-        return new WordDraft(draft.wordType(), draft.de(), draft.ru(), draft.level(),
+        return new WordDraft(draft.wordType(), draft.de(), draft.ru(), draft.en(), draft.level(),
                 draft.gender(), draft.plural(), draft.ich(), draft.du(), draft.er(), draft.wir(),
                 draft.ihr(), draft.sie(), draft.partizip2(), draft.prefix(), draft.rootVerb(), notes,
-                draft.sample(), draft.sampleRu(), draft.translationCorrectionNote());
+                draft.sample(), draft.sampleRu(), draft.sampleEn(), draft.translationCorrectionNote());
     }
 }

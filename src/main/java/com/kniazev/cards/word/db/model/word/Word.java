@@ -42,7 +42,10 @@ public class Word {
 
     @Column(name = "de")
     protected String de;
-    
+
+    @Column(name = "en")
+    protected String en;
+
     @Column(name = "tags", columnDefinition = "text[]")
     @Type(value = ListArrayType.class)
     private List<String> tags;
@@ -57,9 +60,15 @@ public class Word {
     @Column(name = "sample_ru")
     private String sampleRu;
 
+    @Column(name = "sample_en")
+    private String sampleEn;
+
     @UpdateTimestamp
     @Column(name = "last_modified")
     private LocalDateTime lastModified;
+
+    @Column(name = "created_by")
+    private String createdBy;
 
     public Set<String> getRuAsSet() {
         return Arrays.stream(ru.split(";")).collect(Collectors.toSet());

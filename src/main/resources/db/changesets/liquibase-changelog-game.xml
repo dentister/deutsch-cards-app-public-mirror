@@ -40,4 +40,10 @@
     <changeSet id="011-game" author="dentister" failOnError="true" >
         <sqlFile path="../sql/game/011-game.sql" relativeToChangelogFile="true" splitStatements="false"/>
     </changeSet>
+    <changeSet id="012-game" author="dentister" failOnError="true" >
+        <sqlFile path="../sql/game/012-game.sql" relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+    <changeSet id="013-game" author="dentister" failOnError="true" >
+        <sqlFile path="../sql/game/013-game.sql" relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
 </databaseChangeLog>

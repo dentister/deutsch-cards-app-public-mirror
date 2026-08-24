@@ -20,13 +20,19 @@ The main way to play. The bot sends a word/task, the user answers in the chat as
 Commands:
 - `/start`, `/restart` — start/restart the game
 - `/setlevel` — choose the max CEFR level (A1–C2)
-- `/settag` — filter by topic tags (inline keyboard with checkboxes)
-- `/cleartag` — clear the tag filter
 - `/setwords` — open the Mini App to pick specific words to train
 - `/clearwords` — go back to training on all words
 - `/switchpreview` — toggle showing the new-words list at the start of a round
 
-Implementation: [`GermanCardsBot`](src/main/java/com/kniazev/cards/word/telegram/GermanCardsBot.java).
+When a round finishes on its own (not via `/restart` or similar), the bot may also offer a bonus
+**AI blitz round** via yes/no inline buttons: if you opt in, Gemini writes 3 short Russian
+sentences built from the words you just practiced, you reply with all 3 German translations in
+one message, and the AI checks them and gives feedback before the next round starts. The word
+selection is scoped to that just-finished round only and never affects the main per-word score
+used to pick future rounds.
+
+Implementation: [`GermanCardsBot`](src/main/java/com/kniazev/cards/word/telegram/GermanCardsBot.java),
+[`BlitzGameService`](src/main/java/com/kniazev/cards/word/ai/BlitzGameService.java).
 
 ### 2. Telegram Mini App — "pick specific words"
 A static web page (`/miniapp/`, see [`MiniAppWebConfig`](src/main/java/com/kniazev/cards/word/config/MiniAppWebConfig.java) and
@@ -56,11 +62,10 @@ Implementation: [`AdminCardsBot`](src/main/java/com/kniazev/cards/word/telegram/
 Available when Vaadin is enabled (profile without `no-vaadin`), after logging in via
 [`LoginView`](src/main/java/com/kniazev/cards/word/ui/view/LoginView.java).
 
-| Route         | Purpose                        |
-|---------------|----------------------------------|
-| `/login`      | Login form                       |
-| `/` , `/game` | Play in the browser              |
-| `/dictionary` | Dictionary overview               |
+| Route              | Purpose                        |
+|--------------------|----------------------------------|
+| `/login`           | Login form                       |
+| `/` , `/dictionary` | Dictionary overview               |
 | `/nouns`      | Noun CRUD                        |
 | `/verbs`      | Verb CRUD                        |
 | `/adjectives` | Adjective CRUD                   |
@@ -90,11 +95,12 @@ Swagger UI: `/swagger-ui/**` (springdoc, `springdoc.api-docs.path=/swagger-ui/ap
 | Web UI (admin)                | Vaadin Flow 24.7.3 + `crudui`, `line-awesome`, `vaadin-chip-combobox`, `bootstrap-for-vaadin` |
 | Security                     | Spring Security (`VaadinWebSecurity` for the UI, a separate filter chain for headless mode) |
 | Data                          | PostgreSQL, Spring Data JPA / Hibernate, HikariCP, Liquibase (migrations) |
+| Caching                       | Redis (`spring-boot-starter-data-redis`) — TTL-based cache for in-progress game state, survives app restarts; see [`GameCache`](src/main/java/com/kniazev/cards/word/game/GameCache.java) |
 | Telegram                     | `telegrambots-springboot-longpolling-starter` — two independent long-polling bots |
-| AI                            | Spring AI 1.1.8 + `spring-ai-starter-model-google-genai` (Google Gemini, `gemini-3.1-flash-lite`), structured output (`BeanOutputConverter`) straight into the `WordDraft` Java record |
+| AI                            | Spring AI 1.1.8 + `spring-ai-starter-model-google-genai` (Google Gemini, `gemini-3.1-flash-lite`), structured output (`BeanOutputConverter`) straight into Java records (`WordDraft`, `WordUsageExample`, `BlitzSentences`/`BlitzCheckResult` for the blitz round) |
 | REST / API-first              | `openapi-generator-maven-plugin` (generates delegate interfaces and models from YAML specs), springdoc-openapi (Swagger UI) |
 | Mini App                      | Static HTML/CSS/JS, served directly by Spring Boot |
-| Build / misc                  | Maven (`base`, `production` profiles), Lombok, ModelMapper, Testcontainers (PostgreSQL) for tests |
+| Build / misc                  | Maven (`base`, `production` profiles), Lombok, ModelMapper, Testcontainers (PostgreSQL, Redis) for tests |
 | Containerization / deployment | Docker (multi-stage: Maven+Node → JRE Alpine), GitHub Actions → deployed to a VPS (`scp` + `nohup java -jar`) |
 
 

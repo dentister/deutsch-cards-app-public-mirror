@@ -5,7 +5,7 @@ import com.kniazev.cards.word.db.model.word.Noun;
 import com.kniazev.cards.word.db.model.word.Verb;
 import com.kniazev.cards.word.db.model.word.Word;
 import com.kniazev.cards.word.db.model.word.Noun.GenderType;
-import com.kniazev.cards.word.db.services.WordService;
+import com.kniazev.cards.word.db.service.WordService;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

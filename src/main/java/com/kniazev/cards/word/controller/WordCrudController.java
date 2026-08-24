@@ -16,7 +16,7 @@ import com.kniazev.cards.word.api.model.WordCrudApiV1GetWordRsInner;
 import com.kniazev.cards.word.api.model.WordDto;
 import com.kniazev.cards.word.controller.adapter.MappingFunctions;
 import com.kniazev.cards.word.db.model.word.*;
-import com.kniazev.cards.word.db.services.WordService;
+import com.kniazev.cards.word.db.service.WordService;
 
 import lombok.RequiredArgsConstructor;
 

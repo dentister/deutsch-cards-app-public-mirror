@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.kniazev.cards.word.api.model.WordDto;
 import com.kniazev.cards.word.controller.adapter.MappingFunctions;
 import com.kniazev.cards.word.db.model.word.Word;
-import com.kniazev.cards.word.db.services.WordService;
+import com.kniazev.cards.word.db.service.WordService;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEventListener;

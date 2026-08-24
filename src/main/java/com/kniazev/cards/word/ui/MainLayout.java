@@ -1,7 +1,7 @@
 package com.kniazev.cards.word.ui;
 
 import com.kniazev.cards.word.constant.Roles;
-import com.kniazev.cards.word.services.SecurityService;
+import com.kniazev.cards.word.config.SecurityService;
 import com.kniazev.cards.word.ui.view.*;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
@@ -58,8 +58,6 @@ public class MainLayout extends AppLayout {
         
         Collection<? extends GrantedAuthority> authorities = securityService.getAuthenticatedUser().getAuthorities();
 
-        nav.addItem(new SideNavItem("Game", GameView.class, LineAwesomeIcon.DICE_SOLID.create()));
-        
         if (authorities.stream().anyMatch(authority -> authority.getAuthority().equals(Roles.ROLE_ADMIN))) {
             nav.addItem(new SideNavItem("Users", UserListView.class, LineAwesomeIcon.USER_FRIENDS_SOLID.create()));
             nav.addItem(new SideNavItem("Dictionary", DictionaryView.class, LineAwesomeIcon.BATTLE_NET.create()));

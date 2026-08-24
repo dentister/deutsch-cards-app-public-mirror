@@ -2,7 +2,7 @@ package com.kniazev.cards.word.ui.component.dialog;
 
 import com.kniazev.cards.word.db.model.word.Adjective;
 import com.kniazev.cards.word.db.model.word.Word;
-import com.kniazev.cards.word.db.services.WordService;
+import com.kniazev.cards.word.db.service.WordService;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;

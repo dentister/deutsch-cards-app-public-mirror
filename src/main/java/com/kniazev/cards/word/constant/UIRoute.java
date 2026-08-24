@@ -10,7 +10,6 @@ public interface UIRoute {
     String ADJECTIVES_PAGE = "adjectives";
     String ADVERBS_PAGE = "adverbs";
     String PHRASES_PAGE = "phrases";
-    String GAME_PAGE = "game";
     String COUNTRIES = "countries";
 
     String ABSOLUTE_LOGIN = "/" + LOGIN;

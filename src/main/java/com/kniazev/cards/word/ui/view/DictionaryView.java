@@ -4,7 +4,7 @@ import com.kniazev.cards.word.constant.Roles;
 import com.kniazev.cards.word.constant.UIRoute;
 import com.kniazev.cards.word.db.model.word.*;
 import com.kniazev.cards.word.db.model.word.Word.WordType;
-import com.kniazev.cards.word.db.services.WordService;
+import com.kniazev.cards.word.db.service.WordService;
 import com.kniazev.cards.word.ui.MainLayout;
 import com.kniazev.cards.word.ui.component.dialog.BaseDialog;
 import com.kniazev.cards.word.ui.component.util.WordDialogFactory;
@@ -18,6 +18,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouteAlias;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -30,6 +31,7 @@ import jakarta.annotation.security.RolesAllowed;
 @RolesAllowed({Roles.ROLE_ADMIN})
 @PageTitle("Dictionary")
 @Route(value = UIRoute.DICTIONARY_PAGE, layout = MainLayout.class)
+@RouteAlias(value = "", layout = MainLayout.class)
 public class DictionaryView extends AbstractWordListView<Word> {
     private final WordDialogFactory wordDialogFactory;
     

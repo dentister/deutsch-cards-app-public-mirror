@@ -16,6 +16,7 @@ public record WordDraft(
         WordType wordType,
         String de,
         String ru,
+        String en,
         WordLevel level,
 
         // Noun-only
@@ -36,6 +37,7 @@ public record WordDraft(
 
         String sample,
         String sampleRu,
+        String sampleEn,
 
         // Non-null only when the raw input included a user-proposed RU translation that the AI corrected.
         String translationCorrectionNote

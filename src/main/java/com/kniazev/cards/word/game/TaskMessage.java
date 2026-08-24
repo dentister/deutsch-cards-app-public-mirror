@@ -1,57 +1,42 @@
 package com.kniazev.cards.word.game;
 
 import com.kniazev.cards.word.db.model.word.Word;
+import com.kniazev.cards.word.i18n.Messages;
+
+import java.util.Locale;
+import java.util.Map;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
 
 @Getter
+@RequiredArgsConstructor
 public class TaskMessage {
     private final TaskEnum taskId;
     private final Word word;
-    
-    public String getTaskTextWeb() {
-        String ru = word.getRu();
-        
-        return switch (taskId) {
-            case SINGULAR_NOUN: yield String.format("Next noun: < %s >", ru);
-            case PLURAL_NOUN: String.format("Next noun in plural form: < %s >", ru);
-            case VERB: yield String.format("Next verb: < %s >", ru);
-            case ICH_VERB: yield String.format("Next verb: ich < %s >", ru);
-            case DU_VERB: yield String.format("Next verb: du < %s >", ru);
-            case ER_VERB: yield String.format("Next verb: er < %s >", ru);
-            case WIR_VERB: yield String.format("Next verb: wir < %s >", ru);
-            case IHR_VERB: yield String.format("Next verb: ihr < %s >", ru);
-            case SIE_VERB: yield String.format("Next verb: Sie < %s >", ru);
-            case PARTIZIP2: yield String.format("Next verb: ich habe/ist < %s >", ru);
-            case ADJECTIVE: yield String.format("Next adjective: < %s >", ru);
-            case ADVERB: yield String.format("Next adverb: < %s >", ru);
-            case PHRASE: yield String.format("Next phrase: < %s >", ru);
-        };
-    }
-    
-    public String getTaskTextTg() {
+
+    public String getTaskText(Locale locale) {
         String ru = word.getRu();
         String level = word.getLevel().name();
-        
+        Map<String, String> map = Map.of("ru", ru, "level", level);
+
         String taskText = switch (taskId) {
-            case SINGULAR_NOUN: yield String.format("Next noun: *%s* (singular, %s)", ru, level);
-            case PLURAL_NOUN: yield String.format("Next noun: *%s* (plural, %s)", ru, level);
-            case VERB: yield String.format("Next verb: *%s* (%s)", ru, level);
-            case ICH_VERB: yield String.format("Next verb: ich *%s* (%s)", ru, level);
-            case DU_VERB: yield String.format("Next verb: du *%s* (%s)", ru, level);
-            case ER_VERB: yield String.format("Next verb: er *%s* (%s)", ru, level);
-            case WIR_VERB: yield String.format("Next verb: wir *%s* (%s)", ru, level);
-            case IHR_VERB: yield String.format("Next verb: ihr *%s* (%s)", ru, level);
-            case SIE_VERB: yield String.format("Next verb: Sie *%s* (%s)", ru, level);
-            case PARTIZIP2: yield String.format("Next verb: ich habe/ist *%s* (%s)", ru, level);
-            case ADJECTIVE: yield String.format("Next adjective: *%s* (%s)", ru, level);
-            case ADVERB: yield String.format("Next adverb: *%s* (%s)", ru, level);
-            case PHRASE: yield String.format("Next phrase: *%s* (%s)", ru, level);
+            case SINGULAR_NOUN: yield Messages.get("game.task.singular_noun", locale, map);
+            case PLURAL_NOUN:   yield Messages.get("game.task.plural_noun", locale, map);
+            case VERB:          yield Messages.get("game.task.verb", locale, map);
+            case ICH_VERB:      yield Messages.get("game.task.ich_verb", locale, map);
+            case DU_VERB:       yield Messages.get("game.task.du_verb", locale, map);
+            case ER_VERB:       yield Messages.get("game.task.er_verb", locale, map);
+            case WIR_VERB:      yield Messages.get("game.task.wir_verb", locale, map);
+            case IHR_VERB:      yield Messages.get("game.task.ihr_verb", locale, map);
+            case SIE_VERB:      yield Messages.get("game.task.sie_verb", locale, map);
+            case PARTIZIP2:     yield Messages.get("game.task.partizip2", locale, map);
+            case ADJECTIVE:     yield Messages.get("game.task.adjective", locale, map);
+            case ADVERB:        yield Messages.get("game.task.adverb", locale, map);
+            case PHRASE:        yield Messages.get("game.task.phrase", locale, map);
         };
-        
+
         return taskText;
     }
 

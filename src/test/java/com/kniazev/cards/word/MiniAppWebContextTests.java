@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.kniazev.cards.word.controller.MiniAppController;
 import com.kniazev.cards.word.db.model.word.Word;
 import com.kniazev.cards.word.db.repository.WordScoreRepository;
-import com.kniazev.cards.word.db.services.WordService;
+import com.kniazev.cards.word.db.service.WordService;
 
 import java.util.List;
 

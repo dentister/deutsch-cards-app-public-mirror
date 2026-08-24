@@ -41,15 +41,13 @@ public class TelegramInitDataValidator {
     private final long maxAgeSeconds;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public TelegramInitDataValidator(@Value("${telegram.bot.token:}") String botToken,
-                                     @Value("${miniapp.initdata.max-age-seconds:86400}") long maxAgeSeconds) {
-        this.secretKey = hmacSha256("WebAppData".getBytes(StandardCharsets.UTF_8),
-                botToken.getBytes(StandardCharsets.UTF_8));
+    /** Minimal projection of the Telegram user carried inside initData. */
+    public record TelegramUser(long id, String username, String firstName, String languageCode) {}
+
+    public TelegramInitDataValidator(@Value("${telegram.bot.token:}") String botToken, @Value("${miniapp.initdata.max-age-seconds:86400}") long maxAgeSeconds) {
+        this.secretKey = hmacSha256("WebAppData".getBytes(StandardCharsets.UTF_8), botToken.getBytes(StandardCharsets.UTF_8));
         this.maxAgeSeconds = maxAgeSeconds;
     }
-
-    /** Minimal projection of the Telegram user carried inside initData. */
-    public record TelegramUser(long id, String username, String firstName) {}
 
     /**
      * @throws SecurityException if the signature is missing/invalid, the data is expired,
@@ -67,6 +65,7 @@ public class TelegramInitDataValidator {
             if (eq < 0) {
                 continue;
             }
+
             params.put(urlDecode(pair.substring(0, eq)), urlDecode(pair.substring(eq + 1)));
         }
 
@@ -110,12 +109,16 @@ public class TelegramInitDataValidator {
             log.warn("Mini App auth failed: initData has no user field. fields={}", params.keySet());
             throw new SecurityException("initData has no user");
         }
+        
         try {
             JsonNode node = objectMapper.readTree(userJson);
+            
             long id = node.get("id").asLong();
             String username = node.hasNonNull("username") ? node.get("username").asText() : null;
             String firstName = node.hasNonNull("first_name") ? node.get("first_name").asText() : null;
-            return new TelegramUser(id, username, firstName);
+            String languageCode = node.hasNonNull("language_code") ? node.get("language_code").asText() : null;
+
+            return new TelegramUser(id, username, firstName, languageCode);
         } catch (Exception e) {
             throw new SecurityException("initData user is not parseable", e);
         }
@@ -126,14 +129,15 @@ public class TelegramInitDataValidator {
                 .map(e -> e.getKey() + "=" + e.getValue())
                 .collect(Collectors.joining("\n"));
         String expected = toHex(hmacSha256(secretKey, dataCheckString.getBytes(StandardCharsets.UTF_8)));
-        return MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8),
-                providedHash.getBytes(StandardCharsets.UTF_8));
+
+        return MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8), providedHash.getBytes(StandardCharsets.UTF_8));
     }
 
     private static byte[] hmacSha256(byte[] key, byte[] data) {
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(key, "HmacSHA256"));
+
             return mac.doFinal(data);
         } catch (Exception e) {
             throw new IllegalStateException("HMAC-SHA256 failed", e);
@@ -146,10 +150,12 @@ public class TelegramInitDataValidator {
 
     private static String toHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder(bytes.length * 2);
+
         for (byte b : bytes) {
             sb.append(Character.forDigit((b >> 4) & 0xF, 16));
             sb.append(Character.forDigit(b & 0xF, 16));
         }
+
         return sb.toString();
     }
 }

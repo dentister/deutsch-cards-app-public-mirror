@@ -2,11 +2,11 @@ package com.kniazev.cards.word.game;
 
 import com.kniazev.cards.word.db.model.word.Noun;
 import com.kniazev.cards.word.db.model.word.Word;
-import com.kniazev.cards.word.ui.configuration.ChatMessage.RightAnswer.Color;
 
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -27,6 +27,7 @@ public class WordCard {
     private String userAnswer;
     private AnswerMessage answerMsg;
     private boolean newWord;
+    private Locale locale;
 
     public WordCard(Word word, TaskEnum taskId, Supplier<String> rightAnswer) {
         this.cardId = UUID.randomUUID();
@@ -40,10 +41,6 @@ public class WordCard {
         return word.getId();
     }
 
-    public String getTaskText(TaskTextFormat taskTextFormat) {
-        return taskTextFormat == TaskTextFormat.TELEGRAM ? taskMsg.getTaskTextTg() : taskMsg.getTaskTextWeb();
-    }
-
     public void setUserAnswer(String userAnswer) {
         if (this.userAnswer != null) {
             throw new IllegalStateException("User answer was already accepted");
@@ -51,7 +48,7 @@ public class WordCard {
             this.userAnswer = userAnswer;
         }
 
-        answerMsg = new AnswerMessage(word, isRightAnswered(), color, userAnswer, rightAnswer.get());
+        answerMsg = new AnswerMessage(word, isRightAnswered(), color, userAnswer, rightAnswer.get(), locale);
     }
 
     public boolean isRightAnswered() {

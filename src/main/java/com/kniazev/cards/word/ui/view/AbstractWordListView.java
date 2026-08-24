@@ -1,6 +1,6 @@
 package com.kniazev.cards.word.ui.view;
 
-import com.kniazev.cards.word.db.services.WordService;
+import com.kniazev.cards.word.db.service.WordService;
 import com.kniazev.cards.word.ui.component.AbstractTableView;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox.AutoExpandMode;

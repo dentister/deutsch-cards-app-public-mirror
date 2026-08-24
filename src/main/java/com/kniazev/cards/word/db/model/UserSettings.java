@@ -1,6 +1,6 @@
 package com.kniazev.cards.word.db.model;
 
-import com.kniazev.cards.word.services.GameConfiguration;
+import com.kniazev.cards.word.game.GameConfiguration;
 
 import org.hibernate.annotations.Type;
 

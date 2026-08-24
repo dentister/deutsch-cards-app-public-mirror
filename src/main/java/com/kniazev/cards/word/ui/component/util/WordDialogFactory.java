@@ -1,7 +1,7 @@
 package com.kniazev.cards.word.ui.component.util;
 
 import com.kniazev.cards.word.db.model.word.*;
-import com.kniazev.cards.word.db.services.WordService;
+import com.kniazev.cards.word.db.service.WordService;
 import com.kniazev.cards.word.ui.component.dialog.*;
 
 import org.springframework.stereotype.Service;

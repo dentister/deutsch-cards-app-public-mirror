@@ -1,13 +1,16 @@
 package com.kniazev.cards.word.ai;
 
 import com.kniazev.cards.word.db.model.word.Word;
-import com.kniazev.cards.word.db.services.WordService;
+import com.kniazev.cards.word.db.service.WordService;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import lombok.extern.slf4j.Slf4j;
@@ -15,11 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class WordExampleService {
-    private static final String PROMPT_TEMPLATE = """
-            You are a German language teacher. Write ONE short, simple example sentence in German
-            that uses the word "%s" (%s), suitable for a learner at CEFR level %s.
-            Keep it natural and no longer than 10 words. Also provide its Russian translation.
-            """;
+
+    private static final Resource PROMPT_RESOURCE = new ClassPathResource("prompts/word-example.st");
 
     private final ChatClient chatClient;
     private final WordService wordService;
@@ -32,7 +32,10 @@ public class WordExampleService {
     public Optional<WordUsageExample> generateExample(Word word) {
         try {
             WordUsageExample example = chatClient.prompt()
-                    .user(PROMPT_TEMPLATE.formatted(word.getDe(), word.getWordType(), word.getLevel()))
+                    .user(u -> u.text(PROMPT_RESOURCE)
+                            .param("word", word.getDe())
+                            .param("wordType", Objects.toString(word.getWordType(), ""))
+                            .param("level", Objects.toString(word.getLevel(), "")))
                     .call()
                     .entity(WordUsageExample.class);
 
@@ -44,30 +47,35 @@ public class WordExampleService {
     }
 
     @Async("wordExampleExecutor")
-    public void ensureExampleCached(Word word) {
-        cacheExampleIfMissing(word);
+    public void ensureExampleAndEnglishExist(Word word) {
+        doEnsureExampleAndEnglishExist(word);
     }
 
-    // Package-private so it's directly unit-testable without going through the @Async proxy.
-    void cacheExampleIfMissing(Word word) {
-        if (StringUtils.isNotBlank(word.getSample())) {
-            log.debug("Sample already cached for word [{}], skipping generation", word.getDe());
-            return;
-        }
+    void doEnsureExampleAndEnglishExist(Word word) {
+        if (StringUtils.isAnyEmpty(word.getEn(), word.getSample(), word.getSampleRu(), word.getSampleEn())) {
+            generateExample(word).ifPresent(example -> {
+                word.setSample(example.sentence());
+                word.setSampleRu(example.translationRu());
+                word.setSampleEn(example.translationEn());
+                word.setEn(example.wordEn());
 
-        generateExample(word).ifPresent(example -> {
-            word.setSample(example.sentence());
-            word.setSampleRu(example.translationRu());
-            wordService.save(word);
-            log.debug("Cached new usage example for word [{}]", word.getDe());
-        });
+                wordService.save(word);
+
+                log.debug("Saved usage example for word [{}]", word.getDe());
+            });
+        }
     }
 
     private static WordUsageExample sanitize(WordUsageExample raw) {
-        return new WordUsageExample(strip(raw.sentence()), strip(raw.translationRu()));
+        return new WordUsageExample(strip(raw.sentence()), strip(raw.translationRu()),
+                strip(raw.translationEn()), normalizeSlashes(strip(raw.wordEn())));
     }
 
     private static String strip(String s) {
         return s == null ? null : s.replaceAll("[*`~]", "");
+    }
+
+    private static String normalizeSlashes(String s) {
+        return s == null ? null : s.replaceAll("\\s*/\\s*", ", ");
     }
 }

@@ -1,6 +1,6 @@
 package com.kniazev.cards.word.ui.component;
 
-import com.kniazev.cards.word.db.services.IEntityService;
+import com.kniazev.cards.word.db.service.IEntityService;
 import com.kniazev.cards.word.ui.component.dialog.BaseDialog;
 import com.kniazev.cards.word.ui.dto.UIEntity;
 import com.vaadin.flow.component.ClickEvent;

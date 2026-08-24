@@ -2,7 +2,7 @@ package com.kniazev.cards.word.ui.view;
 
 import com.kniazev.cards.word.constant.UIRoute;
 import com.kniazev.cards.word.db.model.User;
-import com.kniazev.cards.word.db.services.UserService;
+import com.kniazev.cards.word.db.service.UserService;
 import com.kniazev.cards.word.ui.MainLayout;
 import com.kniazev.cards.word.ui.component.*;
 import com.kniazev.cards.word.ui.component.UIEntityDialog.UIEntityBuilder;

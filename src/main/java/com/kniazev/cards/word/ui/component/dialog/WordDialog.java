@@ -2,7 +2,7 @@ package com.kniazev.cards.word.ui.component.dialog;
 
 import com.kniazev.cards.word.db.model.word.Word;
 import com.kniazev.cards.word.db.model.word.Word.WordLevel;
-import com.kniazev.cards.word.db.services.WordService;
+import com.kniazev.cards.word.db.service.WordService;
 import com.kniazev.cards.word.ui.component.atomic.MultipleTextField;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.select.Select;

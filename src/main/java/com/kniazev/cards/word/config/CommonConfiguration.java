@@ -1,6 +1,6 @@
 package com.kniazev.cards.word.config;
 
-import com.kniazev.cards.word.db.services.UserService;
+import com.kniazev.cards.word.db.service.UserService;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -3,7 +3,7 @@ package com.kniazev.cards.word.ui.view;
 import com.kniazev.cards.word.constant.Roles;
 import com.kniazev.cards.word.constant.UIRoute;
 import com.kniazev.cards.word.db.model.word.Verb;
-import com.kniazev.cards.word.db.services.WordService;
+import com.kniazev.cards.word.db.service.WordService;
 import com.kniazev.cards.word.ui.MainLayout;
 import com.kniazev.cards.word.util.Action;
 import com.vaadin.flow.component.Component;

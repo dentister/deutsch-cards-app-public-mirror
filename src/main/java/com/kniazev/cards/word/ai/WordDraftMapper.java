@@ -22,12 +22,7 @@ public final class WordDraftMapper {
     private WordDraftMapper() {
     }
 
-    // word.de/ru and verb.ich/du/er/wir/ihr/sie/partizip_2/noun.plural are all varchar(100)
-    // (db/sql/game/001-game.sql, 002-game.sql).
     private static final int SHORT_FIELD_MAX_LENGTH = 100;
-    // verb.notes is varchar(50) (db/sql/game/008-game.sql) - a short tag, not free text. A
-    // drafted value that overflows this crashes the save with a DataIntegrityViolationException
-    // if it slips past here, so this is a real constraint to catch, not a hypothetical one.
     private static final int NOTES_MAX_LENGTH = 50;
 
     /**
@@ -87,45 +82,39 @@ public final class WordDraftMapper {
         }
     }
 
-    /**
-     * Builds the right {@link Word} subtype from a draft. Callers must {@link #validate}
-     * first - this does not re-check required fields.
-     *
-     * <p>Explicitly sets {@code wordType} on the built entity (via the builder chain, so it's
-     * populated in memory even though the {@code word_type} column itself is
-     * {@code insertable=false}). Every existing admin dialog skips this, which silently
-     * breaks {@code WordService.createOrRewrite}'s dedup lookup for newly-created words
-     * ({@code findOneByDeAndWordType(de, null)} never matches) - we deliberately don't
-     * repeat that here, since dedup actually matters for this flow.
-     */
     public static Word toEntity(WordDraft draft) {
         WordLevel level = draft.level() != null ? draft.level() : WordLevel.C2;
 
         return switch (draft.wordType()) {
             case NOUN -> Noun.builder()
-                    .wordType(draft.wordType()).de(draft.de()).ru(draft.ru()).level(level)
-                    .sample(draft.sample()).sampleRu(draft.sampleRu())
+                    .wordType(draft.wordType()).level(level)
+                    .de(draft.de()).ru(draft.ru()).en(draft.en())
+                    .sample(draft.sample()).sampleRu(draft.sampleRu()).sampleEn(draft.sampleEn())
                     .gender(draft.gender()).plural(draft.plural())
                     .build();
             case VERB -> Verb.builder()
-                    .wordType(draft.wordType()).de(draft.de()).ru(draft.ru()).level(level)
-                    .sample(draft.sample()).sampleRu(draft.sampleRu())
+                    .wordType(draft.wordType()).level(level)
+                    .de(draft.de()).ru(draft.ru()).en(draft.en())
+                    .sample(draft.sample()).sampleRu(draft.sampleRu()).sampleEn(draft.sampleEn())
                     .ich(draft.ich()).du(draft.du()).er(draft.er())
                     .wir(draft.wir()).ihr(draft.ihr()).sie(draft.sie())
                     .partizip2(draft.partizip2()).prefix(draft.prefix())
                     .rootVerb(draft.rootVerb()).notes(draft.notes())
                     .build();
             case ADJECTIVE -> Adjective.builder()
-                    .wordType(draft.wordType()).de(draft.de()).ru(draft.ru()).level(level)
-                    .sample(draft.sample()).sampleRu(draft.sampleRu())
+                    .wordType(draft.wordType()).level(level)
+                    .de(draft.de()).ru(draft.ru()).en(draft.en())
+                    .sample(draft.sample()).sampleRu(draft.sampleRu()).sampleEn(draft.sampleEn())
                     .build();
             case ADVERB -> Adverb.builder()
-                    .wordType(draft.wordType()).de(draft.de()).ru(draft.ru()).level(level)
-                    .sample(draft.sample()).sampleRu(draft.sampleRu())
+                    .wordType(draft.wordType()).level(level)
+                    .de(draft.de()).ru(draft.ru()).en(draft.en())
+                    .sample(draft.sample()).sampleRu(draft.sampleRu()).sampleEn(draft.sampleEn())
                     .build();
             case PHRASE -> Phrase.builder()
-                    .wordType(draft.wordType()).de(draft.de()).ru(draft.ru()).level(level)
-                    .sample(draft.sample()).sampleRu(draft.sampleRu())
+                    .wordType(draft.wordType()).level(level)
+                    .de(draft.de()).ru(draft.ru()).en(draft.en())
+                    .sample(draft.sample()).sampleRu(draft.sampleRu()).sampleEn(draft.sampleEn())
                     .build();
         };
     }

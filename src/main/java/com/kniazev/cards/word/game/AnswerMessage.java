@@ -3,11 +3,13 @@ package com.kniazev.cards.word.game;
 import com.kniazev.cards.word.db.model.word.Noun;
 import com.kniazev.cards.word.db.model.word.Verb;
 import com.kniazev.cards.word.db.model.word.Word;
-import com.kniazev.cards.word.telegram.constants.TextPatterns;
-import com.kniazev.cards.word.ui.configuration.ChatMessage.RightAnswer.Color;
+import com.kniazev.cards.word.constant.Emoji;
+import com.kniazev.cards.word.i18n.Messages;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 import lombok.Getter;
@@ -21,36 +23,27 @@ public class AnswerMessage {
     private final Color color;
     private final String userAnswer;
     private final String rightAnswer;
+    private final Locale locale;
 
-    public String getRightResultTokenWeb() {
-        return "Right: ";
-    }
-    
-    public String getRightResultTokenTg() {
-        return "**Right**" + TextPatterns.RIGHT_ANSWER_ICON;
+    public String getRightResultToken() {
+        return Messages.get("game.right_answer", locale);
     }
 
-    public String getWrongResultTokenWeb() {
-        return "Wrong, right answer: ";
-    }
-    
-    public String getWrongResultTokenTg() {
-        return "*Wrong*" + TextPatterns.WRONG_ANSWER_ICON + "\n\nRight answer: ";
+    public String getWrongResultToken() {
+        return Messages.get("game.wrong_answer", locale, Map.of("rightAnswerToken", getRightAnswerToken()));
     }
 
-    public String getRightAnswerTokenWeb() {
-        return rightAnswer;
-    }
-    
-    public String getRightAnswerTokenTg() {
+    public String getRightAnswerToken() {
         String emodji = switch (color) {
-            case BLUE: yield TextPatterns.BLUE_CIRCLE_ICON;
-            case GREEN: yield TextPatterns.GREEN_CIRCLE_ICON;
-            case RED: yield TextPatterns.RED_CIRCLE_ICON;
+            case BLUE: yield Emoji.BLUE_CIRCLE_ICON;
+            case GREEN: yield Emoji.GREEN_CIRCLE_ICON;
+            case RED: yield Emoji.RED_CIRCLE_ICON;
             default: yield "";
         };
-        
-        return StringUtils.isEmpty(emodji) ? String.format("*%s*", rightAnswer) : String.format("*%s* %s", rightAnswer, emodji);
+        String emodjiSuffix = StringUtils.isEmpty(emodji) ? "" : " " + emodji;
+
+        return Messages.get("game.right_answer_token", locale,
+                Map.of("rightAnswer", rightAnswer, "emodjiSuffix", emodjiSuffix));
     }
     
     public String getHints() {
@@ -85,13 +78,17 @@ public class AnswerMessage {
         return sb.toString();
     }
 
-    public String getUsageExampleTg() {
+    public String getUsageExample() {
         if (StringUtils.isBlank(word.getSample())) {
             return "";
         }
 
-        return "\n\n" + TextPatterns.GER_FLAG + " " + word.getSample()
-                + "\n" + TextPatterns.RUS_FLAG + " " + word.getSampleRu();
+        StringBuilder sb = new StringBuilder("\n")
+                .append("\n" + Emoji.GER_FLAG + " " + word.getSample())
+                .append("\n" + Emoji.RUS_FLAG + " " + word.getSampleRu())
+                .append("\n" + Emoji.ENG_FLAG + " " + word.getSampleEn());
+
+        return sb.toString();
     }
 
 }
