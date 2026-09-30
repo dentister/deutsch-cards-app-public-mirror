@@ -14,4 +14,10 @@
     <changeSet id="003-common" author="dentister" failOnError="true" >
         <sqlFile path="../sql/common/003-common.sql" relativeToChangelogFile="true" splitStatements="false"/>
     </changeSet>
+    <changeSet id="004-common" author="dentister" failOnError="true" >
+        <sqlFile path="../sql/common/004-common.sql" relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+    <changeSet id="005-common" author="dentister" failOnError="true" >
+        <sqlFile path="../sql/common/005-common.sql" relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
 </databaseChangeLog>

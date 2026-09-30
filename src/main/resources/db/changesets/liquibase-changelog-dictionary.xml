@@ -41,4 +41,10 @@
                  relativeToChangelogFile="true" splitStatements="false"/>
     </changeSet>
 
+    <!-- Queue of frequent words (deu_news_2025, freq > 20) missing in `word`; processed by WordDraftJob -->
+    <changeSet id="dictionary-007-tasks-from-freq-list" author="dentister" failOnError="true">
+        <sqlFile path="../sql/game/dictionary/tasks-from-freq-list-20260929.sql"
+                 relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
+
 </databaseChangeLog>

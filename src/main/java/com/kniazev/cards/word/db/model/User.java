@@ -36,7 +36,10 @@ public class User implements UserDetails {
     @UIComponent(type = ValueType.TEXT, label = "Login")
     @Column(name = "username")
     private String username;
-    
+
+    @Column(name = "telegram_id")
+    private Long telegramId;
+
     @UIComponent(type = ValueType.PASSWORD, label = "Password")
     @Column(name = "password")
     private String password;

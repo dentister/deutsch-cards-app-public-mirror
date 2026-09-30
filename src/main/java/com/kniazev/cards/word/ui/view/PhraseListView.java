@@ -18,7 +18,7 @@ import java.util.List;
 
 import jakarta.annotation.security.RolesAllowed;
 
-@RolesAllowed({Roles.ROLE_ADMIN, Roles.ROLE_USER})
+@RolesAllowed({Roles.ROLE_ADMIN, Roles.ROLE_LEARNER})
 @PageTitle("Phrases")
 @Route(value = UIRoute.PHRASES_PAGE, layout = MainLayout.class)
 public class PhraseListView extends AbstractWordListView<Phrase> {

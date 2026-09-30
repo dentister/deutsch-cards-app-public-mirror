@@ -28,7 +28,8 @@ public class SecurityConfig extends VaadinWebSecurity {
                     .requestMatchers("/swagger-ui/**").permitAll()
                     .requestMatchers("/v3/api-docs/swagger-config").permitAll()
                     .requestMatchers("/test").permitAll()
-                    .requestMatchers("/miniapp", "/miniapp/**").permitAll();
+                    .requestMatchers("/miniapp", "/miniapp/**").permitAll()
+                    .requestMatchers("/telegram-login/**").permitAll();
             })
             .authenticationManager(authenticationManager);
         

@@ -1,5 +1,6 @@
 package com.kniazev.cards.word.controller;
 
+import com.kniazev.cards.word.db.model.User;
 import com.kniazev.cards.word.db.model.word.Word;
 import com.kniazev.cards.word.db.service.UserService;
 import com.kniazev.cards.word.db.service.WordService;
@@ -55,16 +56,16 @@ public class MiniAppController {
 
     @GetMapping("/selection")
     public List<Long> getSelection(@RequestHeader(INIT_DATA_HEADER) String initData) {
-        TelegramUser user = authenticate(initData);
+        Caller caller = authenticate(initData);
 
-        return gameService.getGameConfiguration(user.username()).getSpecificWordIds();
+        return gameService.getGameConfiguration(caller.handle()).getSpecificWordIds();
     }
 
     @PostMapping("/selection")
     public Map<String, Object> saveSelection(@RequestHeader(INIT_DATA_HEADER) String initData,
                                              @RequestBody SelectionRequest body) {
-        TelegramUser user = authenticate(initData);
-        String username = user.username();
+        Caller caller = authenticate(initData);
+        String username = caller.handle();
 
         List<Long> requested = (body == null || body.wordIds() == null) ? List.of() : body.wordIds();
 
@@ -74,7 +75,7 @@ public class MiniAppController {
 
         List<Long> valid = wordService.findByIds(requested).stream().map(Word::getId).distinct().toList();
 
-        Locale locale = Messages.resolveLocale(user.languageCode());
+        Locale locale = Messages.resolveLocale(caller.languageCode());
 
         GameConfiguration cfg = gameService.getGameConfiguration(username);
         cfg.setSpecificWordIds(valid.isEmpty() ? null : valid);
@@ -82,7 +83,7 @@ public class MiniAppController {
 
         germanCardsBot.ifPresent(bot -> {
             try {
-                bot.notifyGameRestarted(username, String.valueOf(user.id()), locale);
+                bot.notifyGameRestarted(username, String.valueOf(caller.telegramId()), locale);
             } catch (TelegramApiException e) {
                 log.warn("Failed to notify user [{}] after mini app selection save: {}", username, e.getMessage());
             }
@@ -91,20 +92,16 @@ public class MiniAppController {
         return Map.of("saved", valid.size());
     }
 
-    private TelegramUser authenticate(String initData) {
-        TelegramUser user = initDataValidator.validateAndExtractUser(initData);
-        String username = user.username();
+    /** The caller is identified by the signed Telegram id; the username only helps to bind a pre-existing account. */
+    private Caller authenticate(String initData) {
+        TelegramUser telegramUser = initDataValidator.validateAndExtractUser(initData);
+        User user = userService.findOrBindByTelegramId(telegramUser.id(), telegramUser.username())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Unknown user"));
 
-        if (username == null || username.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Telegram username required");
-        }
-
-        if (!userService.userExists(username)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Unknown user");
-        }
-
-        return user;
+        return new Caller(user.getUsername(), telegramUser.id(), telegramUser.languageCode());
     }
+
+    private record Caller(String handle, long telegramId, String languageCode) {}
 
     @ExceptionHandler(SecurityException.class)
     public ResponseEntity<Map<String, String>> onSecurity(SecurityException e) {

@@ -7,7 +7,6 @@ import com.kniazev.cards.word.db.model.word.Word.WordLevel;
 import com.kniazev.cards.word.db.service.UserService;
 import com.kniazev.cards.word.db.model.word.Word;
 import com.kniazev.cards.word.error.exception.GameNotStartedException;
-import com.kniazev.cards.word.error.exception.MissingUsernameException;
 import com.kniazev.cards.word.game.*;
 import com.kniazev.cards.word.game.GameService;
 import com.kniazev.cards.word.i18n.Messages;
@@ -52,9 +51,9 @@ public class GermanCardsBot implements SpringLongPollingBot, LongPollingSingleTh
     private final UserService userService;
     private final GermanCardsBotKeyboards keyboards;
     private final BlitzGameService blitzGameService;
-    private final Set<String> usersCache = new HashSet<>();
     private final String botToken;
     private final String miniAppUrl;
+    private final String webAppUrl;
     private final TelegramMessenger messenger;
     private final Map<String, CommandDefinition> commands;
     
@@ -66,6 +65,7 @@ public class GermanCardsBot implements SpringLongPollingBot, LongPollingSingleTh
 
     public GermanCardsBot(@Value("${telegram.bot.token}") String botToken,
                           @Value("${miniapp.url:}") String miniAppUrl,
+                          @Value("${app.public-url:}") String webAppUrl,
                           GameService gameService,
                           UserService userService,
                           GermanCardsBotKeyboards keyboards,
@@ -73,6 +73,7 @@ public class GermanCardsBot implements SpringLongPollingBot, LongPollingSingleTh
                           @Qualifier("germanCardsBotTelegramClient") TelegramClient telegramClient) {
         this.botToken = botToken;
         this.miniAppUrl = miniAppUrl;
+        this.webAppUrl = webAppUrl;
         this.gameService = gameService;
         this.userService = userService;
         this.keyboards = keyboards;
@@ -115,21 +116,6 @@ public class GermanCardsBot implements SpringLongPollingBot, LongPollingSingleTh
             }
         } catch (TelegramApiException e) {
             log.error(e.getMessage(), e);
-        } catch (MissingUsernameException e) {
-            // chatInfo may never have been constructed (that's exactly what threw this), so
-            // recompute chatId/locale straight from the raw update instead of depending on it.
-            String chatId = update.hasCallbackQuery()
-                    ? update.getCallbackQuery().getMessage().getChatId().toString()
-                    : msg.getChatId().toString();
-            String languageCode = update.hasCallbackQuery()
-                    ? update.getCallbackQuery().getFrom().getLanguageCode()
-                    : msg.getFrom().getLanguageCode();
-
-            try {
-                messenger.send(chatId, Messages.get("bot.set_username", Messages.resolveLocale(languageCode)));
-            } catch (TelegramApiException ex) {
-                log.error(ex.getMessage(), ex);
-            }
         }
     }
 
@@ -289,7 +275,8 @@ public class GermanCardsBot implements SpringLongPollingBot, LongPollingSingleTh
                 //Temporary disabled due to most part of dictionary does not have defined Tag
                 //new CommandDefinition("/settag", "Filter words by topic tag", this::doSetTag),
                 //new CommandDefinition("/cleartag", "Remove tag filter (all words)", this::doClearTag),
-                new CommandDefinition("/switchpreview", "Toggle word list preview on game start", this::doSwitchPreview))) {
+                new CommandDefinition("/switchpreview", "Toggle word list preview on game start", this::doSwitchPreview),
+                new CommandDefinition("/website", "Get your web app link and login", this::doWebsite))) {
             map.put(def.text(), def);
         }
 
@@ -342,43 +329,40 @@ public class GermanCardsBot implements SpringLongPollingBot, LongPollingSingleTh
 
         gameService.saveGameConfiguration(chatInfo.getUsername(), previewCfg);
 
-        messenger.send(chatInfo.getChatId(), previewCfg.getShowWordsPreview() 
-                ? Messages.get("bot.word_list_preview_enabled", chatInfo.getLocale()) 
+        messenger.send(chatInfo.getChatId(), previewCfg.getShowWordsPreview()
+                ? Messages.get("bot.word_list_preview_enabled", chatInfo.getLocale())
                 : Messages.get("bot.word_list_preview_disabled", chatInfo.getLocale()));
     }
 
-    private String getOrCreate(User telegramUser) {
-        String userName = telegramUser.getUserName();
-
-        if (userName == null || userName.isBlank()) {
-            throw new MissingUsernameException();
+    private void doWebsite(GameChat chatInfo) throws TelegramApiException {
+        if (webAppUrl == null || webAppUrl.isBlank()) {
+            messenger.send(chatInfo.getChatId(), Messages.get("bot.website_not_configured", chatInfo.getLocale()));
+            return;
         }
 
-        if (usersCache.contains(userName)) {
-            return userName;
-        }
+        String newPassword = userService.regeneratePassword(chatInfo.getUsername());
 
-        if (!userService.userExists(userName)) {
-            var user = com.kniazev.cards.word.db.model.User.builder()
-                    .username(telegramUser.getUserName())
-                    .password("")
-                    .roles(List.of("ALL", "PLAYER", "LEARNER"))
-                    .enabled(true)
-                    .build();
+        messenger.sendMarkdown(chatInfo.getChatId(), Messages.get("bot.web_credentials", chatInfo.getLocale(),
+                Map.of("url", webAppUrl, "username", chatInfo.getUsername(), "password", newPassword)));
+    }
 
-            user.getUserSettings().setUser(user);
+    private record UserResolution(String username, String newPassword) { }
 
-            userService.save(user);
-        }
+    private UserResolution getOrCreate(User telegramUser) {
+        UserService.TelegramUserResolution resolution =
+                userService.getOrCreateByTelegramId(telegramUser.getId(), telegramUser.getUserName());
 
-        usersCache.add(userName);
-
-        return userName;
+        return new UserResolution(resolution.user().getUsername(), resolution.newPassword());
     }
 
     private void sendWelcomeMessage(GameChat chatInfo) {
         try {
             messenger.sendMarkdown(chatInfo.getChatId(), Messages.get("bot.welcome", chatInfo.getLocale()));
+
+            if (chatInfo.getNewPassword() != null && webAppUrl != null && !webAppUrl.isBlank()) {
+                messenger.sendMarkdown(chatInfo.getChatId(), Messages.get("bot.web_credentials", chatInfo.getLocale(),
+                        Map.of("url", webAppUrl, "username", chatInfo.getUsername(), "password", chatInfo.getNewPassword())));
+            }
         } catch (TelegramApiException e) {
             log.error(e.getMessage(), e);
         }
@@ -468,17 +452,26 @@ public class GermanCardsBot implements SpringLongPollingBot, LongPollingSingleTh
     private class GameChat {
         final String chatId;
         final String username;
+        final String newPassword;
         final Locale locale;
 
         public GameChat(CallbackQuery cbQuery) {
             chatId = cbQuery.getMessage().getChatId().toString();
-            username = getOrCreate(cbQuery.getFrom());
+
+            UserResolution resolution = getOrCreate(cbQuery.getFrom());
+            username = resolution.username();
+            newPassword = resolution.newPassword();
+
             locale = Messages.resolveLocale(cbQuery.getFrom().getLanguageCode());
         }
 
         public GameChat(Message msg) {
             chatId = msg.getChatId().toString();
-            username = getOrCreate(msg.getFrom());
+
+            UserResolution resolution = getOrCreate(msg.getFrom());
+            username = resolution.username();
+            newPassword = resolution.newPassword();
+
             locale = Messages.resolveLocale(msg.getFrom().getLanguageCode());
         }
     }

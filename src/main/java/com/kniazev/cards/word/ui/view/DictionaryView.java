@@ -18,7 +18,6 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouteAlias;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -31,7 +30,6 @@ import jakarta.annotation.security.RolesAllowed;
 @RolesAllowed({Roles.ROLE_ADMIN})
 @PageTitle("Dictionary")
 @Route(value = UIRoute.DICTIONARY_PAGE, layout = MainLayout.class)
-@RouteAlias(value = "", layout = MainLayout.class)
 public class DictionaryView extends AbstractWordListView<Word> {
     private final WordDialogFactory wordDialogFactory;
     

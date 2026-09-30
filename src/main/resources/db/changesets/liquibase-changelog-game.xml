@@ -46,4 +46,7 @@
     <changeSet id="013-game" author="dentister" failOnError="true" >
         <sqlFile path="../sql/game/013-game.sql" relativeToChangelogFile="true" splitStatements="false"/>
     </changeSet>
+    <changeSet id="014-game" author="dentister" failOnError="true" >
+        <sqlFile path="../sql/game/014-game.sql" relativeToChangelogFile="true" splitStatements="false"/>
+    </changeSet>
 </databaseChangeLog>

@@ -12,17 +12,17 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '20'
 
@@ -46,6 +46,7 @@ jobs:
           TELEGRAM_ADMIN_BOT_TOKEN: ${{ secrets.TELEGRAM_ADMIN_BOT_TOKEN }}
           VPS_DB_PASS: ${{ secrets.VPS_DB_PASS }}
           MINIAPP_URL: ${{ secrets.MINIAPP_URL }}
+          APP_PUBLIC_URL: ${{ vars.APP_PUBLIC_URL }}
           GOOGLE_AI_API_KEY: ${{secrets.GOOGLE_AI_API_KEY}}
           PG_DATABASE_NAME: ${{ secrets.PG_DATABASE_NAME }}
           PG_PORT: ${{ secrets.PG_PORT }}
@@ -54,7 +55,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: TELEGRAM_BOT_TOKEN,TELEGRAM_ADMIN_BOT_TOKEN,VPS_DB_PASS,MINIAPP_URL,GOOGLE_AI_API_KEY,PG_DATABASE_NAME,PG_PORT,PG_USERNAME
+          envs: TELEGRAM_BOT_TOKEN,TELEGRAM_ADMIN_BOT_TOKEN,VPS_DB_PASS,MINIAPP_URL,APP_PUBLIC_URL,GOOGLE_AI_API_KEY,PG_DATABASE_NAME,PG_PORT,PG_USERNAME
           script: |
             # Create directory if it doesn't exist
             mkdir -p /usr/apps/deutsch-cards-app
@@ -92,12 +93,13 @@ jobs:
               --spring.datasource.url=jdbc:postgresql://$DB_HOST:$DB_PORT/$DB_NAME \
               --spring.datasource.username=$DB_USER \
               --spring.datasource.password=$VPS_DB_PASS \
-              --spring.profiles.active=prod,no-vaadin \
+              --spring.profiles.active=prod \
               --server.port=8180 \
               --telegram.bot.token=$TELEGRAM_BOT_TOKEN \
               --admin.bot.enabled=true \
               --admin.bot.token=$TELEGRAM_ADMIN_BOT_TOKEN \
               --miniapp.url=$MINIAPP_URL \
+              --app.public-url=$APP_PUBLIC_URL \
               --spring.ai.google.genai.api-key=$GOOGLE_AI_API_KEY \
               > app.log 2>&1 &
 
@@ -107,5 +109,6 @@ jobs:
               echo "Приложение успешно стартовало."
             else
               echo "Ошибка при запуске приложения. Проверьте app.log"
+              tail -n 100 app.log
               exit 1
             fi

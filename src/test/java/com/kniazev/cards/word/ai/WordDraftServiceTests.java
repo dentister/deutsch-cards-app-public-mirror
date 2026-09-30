@@ -95,6 +95,65 @@ class WordDraftServiceTests {
     }
 
     @Test
+    void freshPromptCarriesRawInputAndPartOfSpeechRules() {
+        String json = """
+                {"wordType":"ADJECTIVE","de":"häufig","ru":"частый","en":"frequent","level":"A2",
+                 "gender":null,"plural":null,
+                 "ich":null,"du":null,"er":null,"wir":null,"ihr":null,"sie":null,
+                 "partizip2":null,"prefix":null,"rootVerb":null,"notes":null,
+                 "sample":"Das ist ein häufiger Fehler bei Anfängern.","sampleRu":"Это частая ошибка у начинающих.",
+                 "sampleEn":"This is a frequent mistake among beginners.",
+                 "translationCorrectionNote":null}
+                """;
+        when(chatModel.call(any(Prompt.class)))
+                .thenReturn(new ChatResponse(List.of(new Generation(new AssistantMessage(json)))));
+
+        WordDraftService service = new WordDraftService(ChatClient.builder(chatModel));
+
+        Optional<WordDraft> result = service.generateDraft("adjective: häufig");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().wordType()).isEqualTo(WordType.ADJECTIVE);
+
+        ArgumentCaptor<Prompt> captor = ArgumentCaptor.forClass(Prompt.class);
+        verify(chatModel).call(captor.capture());
+        String sentPrompt = captor.getValue().getContents();
+        assertThat(sentPrompt).contains("adjective: häufig");
+        assertThat(sentPrompt).contains("PART OF SPEECH HINT");
+        assertThat(sentPrompt).contains("Never override the hint");
+        assertThat(sentPrompt).contains("ADJECTIVE: \"ru\" is an adjective");
+        assertThat(sentPrompt).contains("Never use it adverbially");
+    }
+
+    @Test
+    void revisionPromptKeepsWordType() {
+        String json = """
+                {"wordType":"ADJECTIVE","de":"häufig","ru":"частый","en":"frequent","level":"A2",
+                 "gender":null,"plural":null,
+                 "ich":null,"du":null,"er":null,"wir":null,"ihr":null,"sie":null,
+                 "partizip2":null,"prefix":null,"rootVerb":null,"notes":null,
+                 "sample":"Das ist ein häufiger Fehler.","sampleRu":"Это частая ошибка.",
+                 "sampleEn":"This is a frequent mistake.",
+                 "translationCorrectionNote":null}
+                """;
+        when(chatModel.call(any(Prompt.class)))
+                .thenReturn(new ChatResponse(List.of(new Generation(new AssistantMessage(json)))));
+
+        WordDraftService service = new WordDraftService(ChatClient.builder(chatModel));
+        WordDraft previous = new WordDraft(WordType.ADJECTIVE, "häufig", "часто", "frequently", WordLevel.A2,
+                null, null, null, null, null, null, null, null, null, null, null, null,
+                "Das kommt häufig vor.", "Это часто случается.", "This happens frequently.", null);
+
+        service.reviseDraft(previous, "Пример должен использовать слово как прилагательное");
+
+        ArgumentCaptor<Prompt> captor = ArgumentCaptor.forClass(Prompt.class);
+        verify(chatModel).call(captor.capture());
+        String sentPrompt = captor.getValue().getContents();
+        assertThat(sentPrompt).contains("Keep \"wordType\" as in the previous draft");
+        assertThat(sentPrompt).contains("PART OF SPEECH HINT");
+    }
+
+    @Test
     void swallowsAnyChatModelFailureAndReturnsEmptyForFreshDraft() {
         when(chatModel.call(any(Prompt.class))).thenThrow(new RuntimeException("simulated outage"));
 

@@ -42,6 +42,8 @@ class AdminCardsBotTests {
 
     private static final String ADMIN_USERNAME = "mr_dentister";
     private static final String ADMIN_USERNAME_2 = "second_admin";
+    private static final long ADMIN_ID = 1001L;
+    private static final long ADMIN_ID_2 = 1002L;
     private static final Long CHAT_ID = 100L;
     private static final Long CHAT_ID_2 = 200L;
 
@@ -63,25 +65,78 @@ class AdminCardsBotTests {
     }
 
     @Test
-    void ignoresMessagesFromNonAdminUsernames() throws Exception {
-        when(userService.findOneByUsername("someone_else")).thenReturn(Optional.empty());
+    void ignoresMessagesFromTelegramIdsWithoutAnAccount() throws Exception {
+        when(userService.findOrBindByTelegramId(999L, null)).thenReturn(Optional.empty());
 
-        bot.consume(textUpdate("someone_else", "Добавь überkommen"));
+        bot.consume(textUpdate(999L, "Добавь überkommen"));
 
         verifyNoInteractions(wordDraftService);
         verify(telegramClient, never()).execute(any(BotApiMethod.class));
     }
 
     @Test
-    void allowListIsCaseInsensitive() {
+    void ignoresAnAccountThatIsNotAnAdmin() throws Exception {
+        when(userService.findOrBindByTelegramId(999L, null)).thenReturn(Optional.of(playerUser("some_player", 999L)));
+
+        bot.consume(textUpdate(999L, "Добавь überkommen"));
+
+        verifyNoInteractions(wordDraftService);
+        verify(telegramClient, never()).execute(any(BotApiMethod.class));
+    }
+
+    @Test
+    void aStrangerHoldingTheAdminsUsernameIsIgnoredOnceTheAdminAccountBelongsToSomeoneElse() {
+        // The admin row is already bound to the real admin's id, so the service does not hand it to the stranger.
+        when(userService.findOrBindByTelegramId(777L, ADMIN_USERNAME)).thenReturn(Optional.empty());
+
+        bot.consume(textUpdate(telegramUser(777L, ADMIN_USERNAME), CHAT_ID, "Добавь überkommen"));
+
+        verify(userService).findOrBindByTelegramId(777L, ADMIN_USERNAME);
+        verifyNoInteractions(wordDraftService);
+    }
+
+    @Test
+    void anAdminIsRecognisedOnFirstContactThroughTheirTelegramIdAndUsername() {
         WordDraft draft = phraseDraft();
-        when(userService.findOneByUsername("MR_DENTISTER")).thenReturn(Optional.of(adminUser("MR_DENTISTER")));
+        when(userService.findOrBindByTelegramId(ADMIN_ID, ADMIN_USERNAME)).thenReturn(Optional.of(adminUser(ADMIN_USERNAME, ADMIN_ID)));
         when(wordDraftService.generateDraft("überkommen")).thenReturn(Optional.of(draft));
         when(wordService.findOneByDeAndWordType(draft.de(), draft.wordType())).thenReturn(Optional.empty());
 
-        bot.consume(textUpdate("MR_DENTISTER", "überkommen"));
+        bot.consume(textUpdate(telegramUser(ADMIN_ID, ADMIN_USERNAME), CHAT_ID, "überkommen"));
 
         verify(wordDraftService).generateDraft("überkommen");
+    }
+
+    @Test
+    void anAdminWithoutATelegramUsernameIsRecognisedById() {
+        WordDraft draft = phraseDraft();
+        when(userService.findOrBindByTelegramId(ADMIN_ID, null)).thenReturn(Optional.of(adminUser(ADMIN_USERNAME, ADMIN_ID)));
+        when(wordDraftService.generateDraft("überkommen")).thenReturn(Optional.of(draft));
+        when(wordService.findOneByDeAndWordType(draft.de(), draft.wordType())).thenReturn(Optional.empty());
+
+        bot.consume(textUpdate(ADMIN_ID, "überkommen"));
+
+        verify(wordDraftService).generateDraft("überkommen");
+    }
+
+    @Test
+    void savedWordIsAttributedToTheAdminHandle() {
+        WordDraft draft = phraseDraft();
+        when(userService.findOrBindByTelegramId(ADMIN_ID, null)).thenReturn(Optional.of(adminUser(ADMIN_USERNAME, ADMIN_ID)));
+        when(wordDraftService.generateDraft("auf jeden Fall")).thenReturn(Optional.of(draft));
+        when(wordService.findOneByDeAndWordType(draft.de(), draft.wordType())).thenReturn(Optional.empty());
+        when(wordService.createOrRewrite(any(Word.class))).thenAnswer(inv -> {
+            Word w = inv.getArgument(0);
+            w.setId(42L);
+            return w;
+        });
+
+        bot.consume(textUpdate(ADMIN_ID, "auf jeden Fall"));
+        bot.consume(callbackUpdate(ADMIN_ID, DraftReviewPresenter.CALLBACK_ACCEPT, 1));
+
+        ArgumentCaptor<Word> savedCaptor = ArgumentCaptor.forClass(Word.class);
+        verify(wordService).createOrRewrite(savedCaptor.capture());
+        assertThat(savedCaptor.getValue().getCreatedBy()).isEqualTo(ADMIN_USERNAME);
     }
 
     @Test
@@ -91,14 +146,14 @@ class AdminCardsBotTests {
                 WordLevel.B1, null, null, null, null, null, null, null, null, null, null, null, null,
                 "Er kommt auf jeden Fall.", "Он точно придёт.", null, null);
 
-        when(userService.findOneByUsername(ADMIN_USERNAME)).thenReturn(Optional.of(adminUser(ADMIN_USERNAME)));
+        when(userService.findOrBindByTelegramId(ADMIN_ID, null)).thenReturn(Optional.of(adminUser(ADMIN_USERNAME, ADMIN_ID)));
         when(wordDraftService.generateDraft("auf jeden Fall")).thenReturn(Optional.of(original));
         when(wordService.findOneByDeAndWordType(any(), any())).thenReturn(Optional.empty());
         when(wordDraftService.reviseDraft(original, "fix the translation")).thenReturn(Optional.of(revised));
 
-        bot.consume(textUpdate(ADMIN_USERNAME, "auf jeden Fall"));
-        bot.consume(callbackUpdate(ADMIN_USERNAME, DraftReviewPresenter.CALLBACK_RECHECK, 1));
-        bot.consume(textUpdate(ADMIN_USERNAME, "fix the translation"));
+        bot.consume(textUpdate(ADMIN_ID, "auf jeden Fall"));
+        bot.consume(callbackUpdate(ADMIN_ID, DraftReviewPresenter.CALLBACK_RECHECK, 1));
+        bot.consume(textUpdate(ADMIN_ID, "fix the translation"));
 
         verify(wordDraftService).reviseDraft(original, "fix the translation");
         verify(wordDraftService, never()).generateDraft("fix the translation");
@@ -107,7 +162,7 @@ class AdminCardsBotTests {
     @Test
     void secondAcceptOnAlreadyResolvedDraftIsNoOp() {
         WordDraft draft = phraseDraft();
-        when(userService.findOneByUsername(ADMIN_USERNAME)).thenReturn(Optional.of(adminUser(ADMIN_USERNAME)));
+        when(userService.findOrBindByTelegramId(ADMIN_ID, null)).thenReturn(Optional.of(adminUser(ADMIN_USERNAME, ADMIN_ID)));
         when(wordDraftService.generateDraft("auf jeden Fall")).thenReturn(Optional.of(draft));
         when(wordService.findOneByDeAndWordType(draft.de(), draft.wordType())).thenReturn(Optional.empty());
         when(wordService.createOrRewrite(any(Word.class))).thenAnswer(inv -> {
@@ -116,9 +171,9 @@ class AdminCardsBotTests {
             return w;
         });
 
-        bot.consume(textUpdate(ADMIN_USERNAME, "auf jeden Fall"));
-        bot.consume(callbackUpdate(ADMIN_USERNAME, DraftReviewPresenter.CALLBACK_ACCEPT, 1));
-        bot.consume(callbackUpdate(ADMIN_USERNAME, DraftReviewPresenter.CALLBACK_ACCEPT, 1));
+        bot.consume(textUpdate(ADMIN_ID, "auf jeden Fall"));
+        bot.consume(callbackUpdate(ADMIN_ID, DraftReviewPresenter.CALLBACK_ACCEPT, 1));
+        bot.consume(callbackUpdate(ADMIN_ID, DraftReviewPresenter.CALLBACK_ACCEPT, 1));
 
         verify(wordService, times(1)).createOrRewrite(any(Word.class));
     }
@@ -129,7 +184,7 @@ class AdminCardsBotTests {
         // long for its column) escaping createOrRewrite must not silently kill the
         // update-consumer thread - the admin needs to see it and be able to retry.
         WordDraft draft = phraseDraft();
-        when(userService.findOneByUsername(ADMIN_USERNAME)).thenReturn(Optional.of(adminUser(ADMIN_USERNAME)));
+        when(userService.findOrBindByTelegramId(ADMIN_ID, null)).thenReturn(Optional.of(adminUser(ADMIN_USERNAME, ADMIN_ID)));
         when(wordDraftService.generateDraft("auf jeden Fall")).thenReturn(Optional.of(draft));
         when(wordService.findOneByDeAndWordType(draft.de(), draft.wordType())).thenReturn(Optional.empty());
         when(wordService.createOrRewrite(any(Word.class)))
@@ -140,10 +195,10 @@ class AdminCardsBotTests {
                     return w;
                 });
 
-        bot.consume(textUpdate(ADMIN_USERNAME, "auf jeden Fall"));
-        bot.consume(callbackUpdate(ADMIN_USERNAME, DraftReviewPresenter.CALLBACK_ACCEPT, 1));
+        bot.consume(textUpdate(ADMIN_ID, "auf jeden Fall"));
+        bot.consume(callbackUpdate(ADMIN_ID, DraftReviewPresenter.CALLBACK_ACCEPT, 1));
         // Draft must still be alive after the failed save - a second Accept retries instead of no-op'ing.
-        bot.consume(callbackUpdate(ADMIN_USERNAME, DraftReviewPresenter.CALLBACK_ACCEPT, 1));
+        bot.consume(callbackUpdate(ADMIN_ID, DraftReviewPresenter.CALLBACK_ACCEPT, 1));
 
         verify(wordService, times(2)).createOrRewrite(any(Word.class));
     }
@@ -154,12 +209,12 @@ class AdminCardsBotTests {
         WordDraft incomplete = new WordDraft(WordType.NOUN, "Tisch", "стол", null, WordLevel.A1,
                 null, null, null, null, null, null, null, null, null, null, null, null,
                 "Sample.", "Пример.", null, null);
-        when(userService.findOneByUsername(ADMIN_USERNAME)).thenReturn(Optional.of(adminUser(ADMIN_USERNAME)));
+        when(userService.findOrBindByTelegramId(ADMIN_ID, null)).thenReturn(Optional.of(adminUser(ADMIN_USERNAME, ADMIN_ID)));
         when(wordDraftService.generateDraft("Tisch")).thenReturn(Optional.of(incomplete));
         when(wordService.findOneByDeAndWordType(incomplete.de(), incomplete.wordType())).thenReturn(Optional.empty());
 
-        bot.consume(textUpdate(ADMIN_USERNAME, "Tisch"));
-        bot.consume(callbackUpdate(ADMIN_USERNAME, DraftReviewPresenter.CALLBACK_ACCEPT, 1));
+        bot.consume(textUpdate(ADMIN_ID, "Tisch"));
+        bot.consume(callbackUpdate(ADMIN_ID, DraftReviewPresenter.CALLBACK_ACCEPT, 1));
 
         verify(wordService, never()).createOrRewrite(any(Word.class));
     }
@@ -173,8 +228,8 @@ class AdminCardsBotTests {
                 null, null, null, null, null, null, null, null, null, null, null, null,
                 "Er sagt guten Morgen.", "Он говорит доброе утро.", null, null);
 
-        when(userService.findOneByUsername(ADMIN_USERNAME)).thenReturn(Optional.of(adminUser(ADMIN_USERNAME)));
-        when(userService.findOneByUsername(ADMIN_USERNAME_2)).thenReturn(Optional.of(adminUser(ADMIN_USERNAME_2)));
+        when(userService.findOrBindByTelegramId(ADMIN_ID, null)).thenReturn(Optional.of(adminUser(ADMIN_USERNAME, ADMIN_ID)));
+        when(userService.findOrBindByTelegramId(ADMIN_ID_2, null)).thenReturn(Optional.of(adminUser(ADMIN_USERNAME_2, ADMIN_ID_2)));
         when(wordDraftService.generateDraft("auf jeden Fall")).thenReturn(Optional.of(draft1));
         when(wordDraftService.generateDraft("guten Morgen")).thenReturn(Optional.of(draft2));
         when(wordService.findOneByDeAndWordType(draft1.de(), draft1.wordType())).thenReturn(Optional.empty());
@@ -185,9 +240,9 @@ class AdminCardsBotTests {
             return w;
         });
 
-        bot.consume(textUpdate(ADMIN_USERNAME, CHAT_ID, "auf jeden Fall"));
-        bot.consume(textUpdate(ADMIN_USERNAME_2, CHAT_ID_2, "guten Morgen"));
-        bot.consume(callbackUpdate(ADMIN_USERNAME, CHAT_ID, DraftReviewPresenter.CALLBACK_ACCEPT, 1));
+        bot.consume(textUpdate(ADMIN_ID, CHAT_ID, "auf jeden Fall"));
+        bot.consume(textUpdate(ADMIN_ID_2, CHAT_ID_2, "guten Morgen"));
+        bot.consume(callbackUpdate(ADMIN_ID, CHAT_ID, DraftReviewPresenter.CALLBACK_ACCEPT, 1));
 
         ArgumentCaptor<Word> savedCaptor = ArgumentCaptor.forClass(Word.class);
         verify(wordService).createOrRewrite(savedCaptor.capture());
@@ -197,17 +252,18 @@ class AdminCardsBotTests {
     @Test
     void secondAdminDraftingSameWordSeesCollisionWarning() throws Exception {
         WordDraft draft = phraseDraft();
-        when(userService.findOneByUsername(ADMIN_USERNAME)).thenReturn(Optional.of(adminUser(ADMIN_USERNAME)));
-        when(userService.findOneByUsername(ADMIN_USERNAME_2)).thenReturn(Optional.of(adminUser(ADMIN_USERNAME_2)));
+        when(userService.findOrBindByTelegramId(ADMIN_ID, null)).thenReturn(Optional.of(adminUser(ADMIN_USERNAME, ADMIN_ID)));
+        when(userService.findOrBindByTelegramId(ADMIN_ID_2, null)).thenReturn(Optional.of(adminUser(ADMIN_USERNAME_2, ADMIN_ID_2)));
         when(wordDraftService.generateDraft("auf jeden Fall")).thenReturn(Optional.of(draft));
         when(wordService.findOneByDeAndWordType(draft.de(), draft.wordType())).thenReturn(Optional.empty());
 
-        bot.consume(textUpdate(ADMIN_USERNAME, CHAT_ID, "auf jeden Fall"));
-        bot.consume(textUpdate(ADMIN_USERNAME_2, CHAT_ID_2, "auf jeden Fall"));
+        bot.consume(textUpdate(ADMIN_ID, CHAT_ID, "auf jeden Fall"));
+        bot.consume(textUpdate(ADMIN_ID_2, CHAT_ID_2, "auf jeden Fall"));
 
         ArgumentCaptor<BotApiMethod> sentMessages = ArgumentCaptor.forClass(BotApiMethod.class);
         verify(telegramClient, times(2)).execute(sentMessages.capture());
 
+        // Neither admin has a Telegram username here, so the mention comes from the account handle.
         SendMessage secondAdminMessage = (SendMessage) sentMessages.getAllValues().get(1);
         assertThat(secondAdminMessage.getText()).contains("@" + ADMIN_USERNAME);
     }
@@ -218,14 +274,18 @@ class AdminCardsBotTests {
                 "Er kommt auf jeden Fall.", "Он в любом случае придёт.", null, null);
     }
 
-    private static Update textUpdate(String username, String text) {
-        return textUpdate(username, CHAT_ID, text);
+    private static Update textUpdate(long telegramId, String text) {
+        return textUpdate(telegramId, CHAT_ID, text);
     }
 
-    private static Update textUpdate(String username, Long chatId, String text) {
+    private static Update textUpdate(long telegramId, Long chatId, String text) {
+        return textUpdate(telegramUser(telegramId, null), chatId, text);
+    }
+
+    private static Update textUpdate(User from, Long chatId, String text) {
         Update update = new Update();
         Message message = new Message();
-        message.setFrom(telegramUser(username));
+        message.setFrom(from);
         message.setChat(new Chat(chatId, "private"));
         message.setMessageId(1);
         message.setText(text);
@@ -233,33 +293,42 @@ class AdminCardsBotTests {
         return update;
     }
 
-    private static Update callbackUpdate(String username, String data, int messageId) {
-        return callbackUpdate(username, CHAT_ID, data, messageId);
+    private static Update callbackUpdate(long telegramId, String data, int messageId) {
+        return callbackUpdate(telegramId, CHAT_ID, data, messageId);
     }
 
-    private static Update callbackUpdate(String username, Long chatId, String data, int messageId) {
+    private static Update callbackUpdate(long telegramId, Long chatId, String data, int messageId) {
         Update update = new Update();
         Message message = new Message();
         message.setChat(new Chat(chatId, "private"));
         message.setMessageId(messageId);
         CallbackQuery cq = new CallbackQuery();
         cq.setId("cbq-1");
-        cq.setFrom(telegramUser(username));
+        cq.setFrom(telegramUser(telegramId, null));
         cq.setData(data);
         cq.setMessage(message);
         update.setCallbackQuery(cq);
         return update;
     }
 
-    private static com.kniazev.cards.word.db.model.User adminUser(String username) {
+    private static com.kniazev.cards.word.db.model.User adminUser(String handle, long telegramId) {
+        return account(handle, telegramId, "ADMIN");
+    }
+
+    private static com.kniazev.cards.word.db.model.User playerUser(String handle, long telegramId) {
+        return account(handle, telegramId, "PLAYER");
+    }
+
+    private static com.kniazev.cards.word.db.model.User account(String handle, long telegramId, String role) {
         return com.kniazev.cards.word.db.model.User.builder()
-                .username(username)
-                .roles(List.of("ADMIN"))
+                .username(handle)
+                .telegramId(telegramId)
+                .roles(List.of(role))
                 .build();
     }
 
-    private static User telegramUser(String username) {
-        User user = new User(1L, "Test", false);
+    private static User telegramUser(long id, String username) {
+        User user = new User(id, "Test", false);
         user.setUserName(username);
         return user;
     }

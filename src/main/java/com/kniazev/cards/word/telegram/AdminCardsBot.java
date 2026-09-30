@@ -102,21 +102,23 @@ public class AdminCardsBot implements SpringLongPollingBot, LongPollingSingleThr
         try {
             if (update.hasCallbackQuery()) {
                 CallbackQuery cq = update.getCallbackQuery();
+                Optional<com.kniazev.cards.word.db.model.User> admin = resolveAdmin(cq.getFrom());
 
-                if (isAllowed(cq.getFrom())) {
+                if (admin.isPresent()) {
                     AdminSession session = sessionFor(cq.getMessage().getChatId());
-                    
-                    session.adminUsername = cq.getFrom().getUserName();
-                    
+
+                    session.adminUsername = admin.get().getUsername();
+
                     handleCallback(cq, session);
                 }
             } else if (update.getMessage() != null && update.getMessage().hasText()) {
                 Message msg = update.getMessage();
+                Optional<com.kniazev.cards.word.db.model.User> admin = resolveAdmin(msg.getFrom());
 
-                if (isAllowed(msg.getFrom())) {
+                if (admin.isPresent()) {
                     AdminSession session = sessionFor(msg.getChatId());
-                    
-                    session.adminUsername = msg.getFrom().getUserName();
+
+                    session.adminUsername = admin.get().getUsername();
 
                     if (msg.isCommand()) {
                         handleCommand(msg, session);
@@ -134,17 +136,18 @@ public class AdminCardsBot implements SpringLongPollingBot, LongPollingSingleThr
         return sessions.computeIfAbsent(chatId, id -> new AdminSession());
     }
 
-    private boolean isAllowed(User from) {
-        String username = from == null ? null : from.getUserName();
-        boolean allowed = username != null && userService.findOneByUsername(username)
-                .map(u -> u.getRoles() != null && u.getRoles().contains("ADMIN"))
-                .orElse(false);
+    private Optional<com.kniazev.cards.word.db.model.User> resolveAdmin(User from) {
+        Optional<com.kniazev.cards.word.db.model.User> admin = from == null || from.getId() == null
+                ? Optional.empty()
+                : userService.findOrBindByTelegramId(from.getId(), from.getUserName())
+                        .filter(u -> u.getRoles() != null && u.getRoles().contains("ADMIN"));
 
-        if (!allowed) {
-            log.info("Ignoring update from non-admin user [{}]", username);
+        if (admin.isEmpty()) {
+            log.info("Ignoring update from non-admin Telegram user [id={}, username={}]",
+                    from == null ? null : from.getId(), from == null ? null : from.getUserName());
         }
 
-        return allowed;
+        return admin;
     }
 
     private void handleCommand(Message msg, AdminSession session) throws TelegramApiException {

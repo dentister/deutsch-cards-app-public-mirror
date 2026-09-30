@@ -1,5 +1,6 @@
 package com.kniazev.cards.word.ui.view;
 
+import com.kniazev.cards.word.constant.Roles;
 import com.kniazev.cards.word.constant.UIRoute;
 import com.kniazev.cards.word.db.model.User;
 import com.kniazev.cards.word.db.service.UserService;
@@ -16,10 +17,11 @@ import com.vaadin.flow.router.Route;
 import org.springframework.data.domain.Sort;
 
 import java.util.List;
+import java.util.Objects;
 
-import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 
-@PermitAll
+@RolesAllowed({Roles.ROLE_ADMIN})
 @PageTitle("Users")
 @Route(value = UIRoute.USERS_PATH, layout = MainLayout.class)
 public class UserListView extends AbstractTableView<User> {
@@ -54,6 +56,7 @@ public class UserListView extends AbstractTableView<User> {
         
         grid.addColumn(user -> user.getId()).setHeader("ID");
         grid.addColumn(user -> user.getUsername()).setHeader("Login");
+        grid.addColumn(user -> Objects.toString(user.getTelegramId(), "")).setHeader("Telegram ID");
         grid.addColumn(user -> user.getRoles()).setHeader("Roles");
     }
     
@@ -100,10 +103,14 @@ public class UserListView extends AbstractTableView<User> {
     }
     
     private UIEntity<User> buildUiEntity(User user) {
+        TextField username = new TextField("Username");
+        username.setReadOnly(user.getTelegramId() != null);
+
         return new UIEntityBuilder<User>()
                 .withEntity(user)
                 .withComponent(new StringEntityParameter<User, Long>(User::getId, new TextField("ID"), Long::valueOf))
-                .withComponent(new BaseEntityParameter<>(User::getUsername, User::setUsername, new TextField("Username")))
+                .withComponent(new StringEntityParameter<User, Long>(User::getTelegramId, new TextField("Telegram ID"), Long::valueOf))
+                .withComponent(new BaseEntityParameter<>(User::getUsername, User::setUsername, username))
                 .withComponent(new BaseEntityParameter<>(User::getPassword, User::setPassword, new PasswordField("Password")))
                 .build();
     }

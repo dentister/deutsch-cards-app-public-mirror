@@ -28,9 +28,11 @@ public class WordDraftService {
     }
 
     public Optional<WordDraft> generateDraft(String rawInput) {
-        return callModel(u -> u.text(FRESH_PROMPT_RESOURCE)
-                .param("rawInput", rawInput)
-                .param("fieldRules", FIELD_RULES), rawInput);
+        return callModel(u -> freshSpec(u, rawInput), rawInput);
+    }
+
+    public WordDraft generateDraftOrThrow(String rawInput) {
+        return chatClient.prompt().user(u -> freshSpec(u, rawInput)).call().entity(WordDraft.class);
     }
 
     public Optional<WordDraft> reviseDraft(WordDraft previousDraft, String correctionNote) {
@@ -38,6 +40,12 @@ public class WordDraftService {
                 .param("previousDraft", previousDraft.toString())
                 .param("correctionNote", correctionNote)
                 .param("fieldRules", FIELD_RULES), previousDraft.de());
+    }
+
+    private static ChatClient.PromptUserSpec freshSpec(ChatClient.PromptUserSpec userSpec, String rawInput) {
+        return userSpec.text(FRESH_PROMPT_RESOURCE)
+                .param("rawInput", rawInput)
+                .param("fieldRules", FIELD_RULES);
     }
 
     private Optional<WordDraft> callModel(Consumer<ChatClient.PromptUserSpec> userSpec, String logContext) {
