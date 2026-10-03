@@ -3,7 +3,7 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-/src/main/frontend/generated/
+/core/src/main/frontend/generated/
 /.dbeaver/
 .DS_Store
 vite.generated.ts
@@ -37,6 +37,6 @@ build/
 ### VS Code ###
 .vscode/
 /.DS_Store
-/node_modules/
-/src/main/bundles/
-/src/main/dev-bundle/
+/core/node_modules/
+/core/src/main/bundles/
+/core/src/main/dev-bundle/

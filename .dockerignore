@@ -1,0 +1,12 @@
+.git
+.github
+.claude
+.dbeaver
+.settings
+.vscode
+docs
+k8s
+**/target
+**/node_modules
+**/.DS_Store
+
